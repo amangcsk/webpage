@@ -109,10 +109,10 @@
         let ballRadius = 6;
         let x = canvas.width / 2;
         let y = canvas.height - 30;
-        let dx = 1;
-        let dy = -1;
+        let dx = 1; // 2에서 1로 변경
+        let dy = -1; // -2에서 -1로 변경
         let paddleHeight = 10;
-        let paddleWidth = canvas.width * 0.30;
+        let paddleWidth = canvas.width * 0.15; // 패들 크기 줄이기
         let paddleX = (canvas.width - paddleWidth) / 2;
 
         // 벽돌 설정 (세로 6개, 가로 8개)
@@ -128,6 +128,7 @@
         let lives = 3;
         let gameRunning = false;
         let gamePaused = false;
+        let ballLaunched = false;
 
         // 벽돌 생성
         let bricks = [];
@@ -182,6 +183,11 @@
                 startButton.disabled = true;
                 pauseButton.disabled = false;
                 restartButton.disabled = false;
+                // 게임 시작 시 공의 초기 위치 설정
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                dx = 1; // 2에서 1로 변경
+                dy = -1; // -2에서 -1로 변경
                 draw();
             }
         }
@@ -230,7 +236,6 @@
 
         function drawPaddle() {
             ctx.beginPath();
-            // 패들을 캔버스 하단에 맞춤
             ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
@@ -255,64 +260,16 @@
             }
         }
 
-        function drawLives() {
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "#0095DD";
-            ctx.fillText("생명: " + lives, canvas.width - 65, 20);
-        }
-
         function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBricks();
-    drawBall();
-    drawPaddle();
-    collisionDetection();
-
-    if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-        ball.dx = -ball.dx;
-    }
-    if (ball.y + ball.dy < ball.radius) {
-        ball.dy = -ball.dy;
-    } else if (ball.y + ball.dy > canvas.height - ball.radius) {
-        if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-            // 공과 패들의 충돌을 더 정확하게 감지합니다
-            if (ball.y + ball.radius >= canvas.height - paddle.height) {
-                ball.dy = -ball.dy;
-                // 공의 y 위치를 패들의 상단에 정확히 위치시킵니다
-                ball.y = canvas.height - paddle.height - ball.radius;
-                
-                // 공이 패들의 어느 부분에 부딪혔는지에 따라 x 방향 속도를 조절합니다
-                let hitPoint = (ball.x - paddle.x) / paddle.width;
-                ball.dx = ball.speed * (hitPoint - 0.5) * 2; // -1에서 1 사이의 값
-            }
-        } else {
-            gameOver();
-            return;
-        }
-    }
-
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    if (rightPressed && paddle.x < canvas.width - paddle.width) {
-        paddle.x += paddle.speed;
-    } else if (leftPressed && paddle.x > 0) {
-        paddle.x -= paddle.speed;
-    }
-
-    if (gameRunning) {
-        requestAnimationFrame(draw);
-    }
-}function draw() {
             if (gamePaused) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
-            drawBall();
             drawPaddle();
-            drawLives();
+            drawBall();
             collisionDetection();
 
+            // 공의 움직임
             if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
                 dx = -dx;
             }
@@ -322,17 +279,9 @@
                 if (x > paddleX && x < paddleX + paddleWidth) {
                     dy = -dy;
                 } else {
-                    lives--;
-                    if (!lives) {
-                        alert("게임 오버");
-                        document.location.reload();
-                    } else {
-                        x = canvas.width / 2;
-                        y = canvas.height - 30;
-                        dx = 1;
-                        dy = -1;
-                        paddleX = (canvas.width - paddleWidth) / 2;
-                    }
+                    // 공이 패들에 맞지 않으면 즉시 게임 종료
+                    gameOver();
+                    return;
                 }
             }
 
@@ -343,6 +292,16 @@
                 requestAnimationFrame(draw);
             }
         }
+
+        function gameOver() {
+            gameRunning = false;
+            alert("게임 오버");
+            document.location.reload();
+        }
+
+        // 공 발사 기능 제거
+        // canvas.addEventListener('click', launchBall);
+        // function launchBall() { ... } 제거
 
         // 초기 화면 그리기
         drawBricks();
