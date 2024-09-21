@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모바일 테트리스</title>
+    <style>
+        /* 기존 스타일은 그대로 유지 */
+    </style>
+</head>
+<body>
+    <button id="homeButton" onclick="location.href='index.html'">Home</button>
+    <div id="gameContainer">
+        <div id="scoreBox">점수: <span id="score">0</span></div>
+        <div id="boards">
+            <canvas id="gameBoard" width="200" height="400"></canvas>
+            <canvas id="previewBoard" width="80" height="80"></canvas>
+        </div>
+        <div id="controls">
+            <button id="leftBtn">←</button>
+            <button id="rotateBtn">회전</button>
+            <button id="rightBtn">→</button>
+            <button id="downBtn">↓</button>
+        </div>
+        <div id="gameControls">
+            <button id="startBtn">시작</button>
+            <button id="pauseBtn">일시정지</button>
+            <button id="restartBtn">재시작</button>
+        </div>
+    </div>
+
+    <script src="mobile-tetriss.js"></script>
+</body>
+</html>

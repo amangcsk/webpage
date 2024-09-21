@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스 게임</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-area {
+            display: flex;
+            gap: 20px;
+        }
+        #game-board {
+            width: 300px;
+            height: 600px;
+            border: 2px solid #333;
+            background-color: #fff;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+        }
+        #side-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        #next-piece {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #333;
+            background-color: #fff;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+        #next-piece div, #game-board div {
+            border: 1px solid #ddd;
+        }
+        #info {
+            font-size: 18px;
+            text-align: center;
+        }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #keyboard-controls {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>테트리스</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">홈으로</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div id="game-container">
+        <div id="game-area">
+            <div id="game-board"></div>
+            <div id="side-panel">
+                <div id="next-piece"></div>
+                <div id="info">
+                    <p>점수: <span id="score">0</span></p>
+                    <p>레벨: <span id="level">1</span></p>
+                </div>
+                <div id="controls">
+                    <button id="start-btn">시작</button>
+                    <button id="pause-btn">일시정지</button>
+                    <button id="restart-btn">재시작</button>
+                </div>
+            </div>
+        </div>
+        <div id="keyboard-controls">
+            ← | →  | ↓ :  | ↑ : 회전 | 스페이스바 : 퀵 드롭
+        </div>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const nextPiecePreview = document.getElementById('next-piece');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        const COLS = 10;
+        const ROWS = 20;
+        let score = 0;
+        let level = 1;
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece;
+        let nextPiece;
+        let gameInterval;
+        let isGameRunning = false;
+        let isPaused = false;
+
+        const tetrominoes = {
+            I: [[1, 1, 1, 1]],
+            O: [[1, 1], [1, 1]],
+            T: [[0, 1, 0], [1, 1, 1]],
+            S: [[0, 1, 1], [1, 1, 0]],
+            Z: [[1, 1, 0], [0, 1, 1]],
+            J: [[1, 0, 0], [1, 1, 1]],
+            L: [[0, 0, 1], [1, 1, 1]]
+        };
+
+        const colors = {
+            I: 'cyan',
+            O: 'yellow',
+            T: 'purple',
+            S: 'green',
+            Z: 'red',
+            J: 'blue',
+            L: 'orange'
+        };
+
+        function drawBoard() {
+            gameBoard.innerHTML = '';
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.createElement('div');
+                    if (board[row][col]) {
+                        cell.style.backgroundColor = board[row][col];
+                    }
+                    gameBoard.appendChild(cell);
+                }
+            }
+            if (currentPiece) {
+                drawPiece();
+            }
+        }
+
+        function drawNextPiece() {
+            nextPiecePreview.innerHTML = '';
+            if (!nextPiece) return;
+            
+            const pieceGrid = tetrominoes[nextPiece.shape];
+            const color = colors[nextPiece.shape];
+
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cell = document.createElement('div');
+                    if (pieceGrid[i] && pieceGrid[i][j]) {
+                        cell.style.backgroundColor = color;
+                    }
+                    nextPiecePreview.appendChild(cell);
+                }
+            }
+        }
+
+        function createPiece() {
+            const shapes = Object.keys(tetrominoes);
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            return {
+                shape: shape,
+                grid: tetrominoes[shape],
+                color: colors[shape],
+                row: 0,
+                col: Math.floor(COLS / 2) - Math.ceil(tetrominoes[shape][0].length / 2)
+            };
+        }
+
+        function drawPiece() {
+            currentPiece.grid.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    if (cell) {
+                        const boardRow = currentPiece.row + i;
+                        const boardCol = currentPiece.col + j;
+                        if (boardRow >= 0 && boardRow < ROWS && boardCol >= 0 && boardCol < COLS) {
+                            gameBoard.children[boardRow * COLS + boardCol].style.backgroundColor = currentPiece.color;
+                        }
+                    }
+                });
+            });
+        }
+
+        function canMove(rowOffset, colOffset) {
+            return currentPiece.grid.every((row, i) => {
+                return row.every((cell, j) => {
+                    if (cell) {
+                        const boardRow = currentPiece.row + i + rowOffset;
+                        const boardCol = currentPiece.col + j + colOffset;
+                        return boardRow < ROWS && boardCol >= 0 && boardCol < COLS && !board[boardRow][boardCol];
+                    }
+                    return true;
+                });
+            });
+        }
+
+        function moveDown() {
+            if (canMove(1, 0)) {
+                currentPiece.row++;
+                drawBoard();
+            } else {
+                placePiece();
+            }
+        }
+
+        function moveLeft() {
+            if (canMove(0, -1)) {
+                currentPiece.col--;
+                drawBoard();
+            }
+        }
+
+        function moveRight() {
+            if (canMove(0, 1)) {
+                currentPiece.col++;
+                drawBoard();
+            }
+        }
+
+        function rotate() {
+            const rotated = currentPiece.grid[0].map((_, i) => 
+                currentPiece.grid.map(row => row[i]).reverse()
+            );
+            const previousGrid = currentPiece.grid;
+            currentPiece.grid = rotated;
+            if (!canMove(0, 0)) {
+                currentPiece.grid = previousGrid;
+            }
+            drawBoard();
+        }
+
+        function placePiece() {
+            currentPiece.grid.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    if (cell) {
+                        const boardRow = currentPiece.row + i;
+                        const boardCol = currentPiece.col + j;
+                        if (boardRow >= 0 && boardRow < ROWS && boardCol >= 0 && boardCol < COLS) {
+                            board[boardRow][boardCol] = currentPiece.color;
+                        }
+                    }
+                });
+            });
+            checkLines();
+            currentPiece = nextPiece;
+            nextPiece = createPiece();
+            drawNextPiece();
+            if (!canMove(0, 0)) {
+                gameOver();
+            }
+            drawBoard();
+        }
+
+        function checkLines() {
+            let linesCleared = 0;
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (board[row].every(cell => cell)) {
+                    board.splice(row, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    linesCleared++;
+                }
+            }
+            if (linesCleared > 0) {
+                updateScore(linesCleared);
+            }
+        }
+
+        function updateScore(linesCleared) {
+            const points = [40, 100, 300, 1200];
+            score += points[linesCleared - 1] * level;
+            scoreElement.textContent = score;
+            if (score > level * 1000) {
+                level++;
+                levelElement.textContent = level;
+                clearInterval(gameInterval);
+                gameInterval = setInterval(moveDown, 1000 / level);
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            isGameRunning = false;
+            isPaused = false;
+            alert('게임 오버! 점수: ' + score);
+            startBtn.textContent = '시작';
+            pauseBtn.textContent = '일시정지';
+        }
+
+        function startGame() {
+            if (!isGameRunning) {
+                isGameRunning = true;
+                isPaused = false;
+                board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+                score = 0;
+                level = 1;
+                scoreElement.textContent = score;
+                levelElement.textContent = level;
+                nextPiece = createPiece();
+                currentPiece = createPiece();
+                drawBoard();
+                drawNextPiece();
+                gameInterval = setInterval(moveDown, 1000);
+                startBtn.textContent = '재시작';
+                pauseBtn.textContent = '일시정지';
+            } else {
+               // 게임 재시작
+              gameOver();
+              startGame();
+            }
+        }
+
+        function togglePause() {
+            if (isGameRunning) {
+                if (isPaused) {
+                    // 게임 재개
+                    isPaused = false;
+                    gameInterval = setInterval(moveDown, 1000 / level);
+                    pauseBtn.textContent = '일시정지';
+                } else {
+                    // 게임 일시정지
+                    isPaused = true;
+                    clearInterval(gameInterval);
+                    pauseBtn.textContent = '계속하기';
+                }
+            }
+        }
+
+        function init() {
+            drawBoard();
+            drawNextPiece();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!isGameRunning || isPaused) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                    moveRight();
+                    break;
+                case 'ArrowDown':
+                    moveDown();
+                    break;
+                case 'ArrowUp':
+                    rotate();
+                    break;
+                case ' ':
+                    while (canMove(1, 0)) moveDown();
+                    break;
+            }
+        });
+
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        restartBtn.addEventListener('click', startGame);
+
+        init();
+    </script>
+</body>
+</html>

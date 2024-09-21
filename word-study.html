@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily English</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .word-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .word-text {
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 5px;
+            flex-grow: 1;
+        }
+        .checkbox {
+            margin-right: 5px;
+        }
+        .speaker-button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        #popup {
+            display: none;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .control-button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .control-button:hover {
+            background-color: #45a049;
+        }
+        .control-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>단어 공부</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">홈으로</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div id="words-display"></div>
+    <div class="button-container">
+        <button id="prevButton" class="control-button" onclick="changeWord(-5)">이전</button>
+        <button id="deleteButton" class="control-button" onclick="deleteSelectedWords()">삭제</button>
+        <button id="nextButton" class="control-button" onclick="changeWord(5)">다음</button>
+    </div>
+    <div id="popup"></div>
+    <section id="helps"">
+        <h2>도움말</h2>
+        <p>단어를 클릭하면 popup으로 발음기호와 뜻,예문이 보이고 스피커는 두번의 발음이 난다.</p>
+    </section>
+    <script>
+        const words = [];
+
+        // 첨부된 파일에서 단어 데이터 파싱
+        const fileContent = `English Pronunciation Korean Translation Examples
+1. use /juːz/ 유즈 사용하다 I use my computer every day.
+2. help /help/ 헬프 돕다 Can you help me with this task?
+3. make /meɪk/ 메이크 만들다 Let's make dinner together.
+4. good /ɡʊd/ 굿 좋은 This is a good book.
+5. time /taɪm/ 타임 시간 What time is it?
+6. look /lʊk/ 룩 보다 Look at that beautiful sunset.
+7. want /wɑːnt/ 원트 원하다 I want to learn English.
+8. know /noʊ/ 노우 알다 Do you know the answer?
+9. think /θɪŋk/ 싱크 생각하다 What do you think about this idea?
+10. see /siː/ 시 보다 Can you see that mountain?
+11. come /kʌm/ 컴 오다 Please come here.
+12. work /wɜːrk/ 워크 일하다 I work at a bank.
+13. like /laɪk/ 라이크 좋아하다 I like playing soccer.
+14. need /niːd/ 니드 필요로 하다 We need more time to finish this project.
+15. feel /fiːl/ 필 느끼다 I feel happy today.
+16. try /traɪ/ 트라이 시도하다 Let's try again.
+17. ask /æsk/ 애스크 묻다 Don't be afraid to ask questions.
+18. tell /tel/ 텔 말하다 Can you tell me the way to the station?
+19. find /faɪnd/ 파인드 찾다 I can't find my keys.
+20. give /ɡɪv/ 기브 주다 Give me a call when you arrive.
+21. hope /hoʊp/ 호프 희망하다 I hope you have a great day.
+22. mean /miːn/ 민 의미하다 What does this word mean?
+23. show /ʃoʊ/ 쇼우 보여주다 Can you show me how to do this?
+24. hear /hɪr/ 히어 듣다 I can hear music playing.
+25. play /pleɪ/ 플레이 놀다, 연주하다 Let's play a game.
+26. run /rʌn/ 런 달리다 I run every morning.
+27. move /muːv/ 무브 움직이다 Please move your car.
+28. live /lɪv/ 리브 살다 I live in Seoul.
+29. believe /bɪˈliːv/ 빌리브 믿다 I believe in you.
+30. bring /brɪŋ/ 브링 가져오다 Please bring your textbook to class.
+31. happen /ˈhæp.ən/ 해픈 일어나다 What happened yesterday?
+32. write /raɪt/ 라이트 쓰다 I need to write a report.
+33. provide /prəˈvaɪd/ 프로바이드 제공하다 The company provides free lunch.
+34. sit /sɪt/ 싯 앉다 Please sit down.
+35. stand /stænd/ 스탠드 서다 Stand up when the teacher comes in.
+36. lose /luːz/ 루즈 잃다 Don't lose your passport.
+37. pay /peɪ/ 페이 지불하다 I need to pay my bills.
+38. meet /miːt/ 밋 만나다 Let's meet at the cafe.
+39. include /ɪnˈkluːd/ 인클루드 포함하다 Does the price include tax?
+40. continue /kənˈtɪn.juː/ 컨티뉴 계속하다 Please continue your story.
+41. set /set/ 셋 설정하다 Set your alarm for 7 AM.
+42. learn /lɜːrn/ 런 배우다 I want to learn how to cook.
+43. change /tʃeɪndʒ/ 체인지 변화하다 The weather can change quickly.
+44. lead /liːd/ 리드 이끌다 Who will lead the project?
+45. understand /ˌʌn.dərˈstænd/ 언더스탠드 이해하다 Do you understand the instructions?
+46. watch /wɑːtʃ/ 와치 보다 I like to watch movies.
+47. follow /ˈfɑː.loʊ/ 팔로우 따르다 Follow the signs to the exit.
+48. stop /stɑːp/ 스탑 멈추다 The car stopped at the red light.
+49. create /kriˈeɪt/ 크리에이트 만들다 Let's create a new design.
+50. speak /spiːk/ 스피크 말하다 Can you speak English?
+English Pronunciation Korean Translation Examples
+51. offer /ˈɔː.fər/ 오퍼 제안하다 They offered me a new job.
+52. consider /kənˈsɪd.ər/ 컨시더 고려하다 Please consider my proposal.
+53. appear /əˈpɪr/ 어피어 나타나다 The sun appeared from behind the clouds.
+54. take /teɪk/ 테이크 가지다, 데려가다 Take your umbrella with you.
+55. allow /əˈlaʊ/ 얼라우 허용하다 Smoking is not allowed here.
+56. explain /ɪkˈspleɪn/ 익스플레인 설명하다 Can you explain this concept to me?
+57. develop /dɪˈvel.əp/ 디벨럽 발전시키다 We need to develop new skills.
+58. describe /dɪˈskraɪb/ 디스크라이브 묘사하다 Describe what you saw at the scene.
+59. agree /əˈɡriː/ 어그리 동의하다 I agree with your opinion.
+60. support /səˈpɔːrt/ 서포트 지원하다 I support your decision.
+61. expect /ɪkˈspekt/ 익스펙트 기대하다 What do you expect from this meeting?
+62. choose /tʃuːz/ 츄즈 선택하다 Choose the best option for you.
+63. involve /ɪnˈvɑːlv/ 인볼브 포함하다 This project involves a lot of research.
+64. suggest /səˈdʒest/ 서제스트 제안하다 Can you suggest a good restaurant?
+65. build /bɪld/ 빌드 건설하다 They are building a new school.
+66. grow /ɡroʊ/ 그로우 자라다 Plants grow faster in the summer.
+67. open /ˈoʊ.pən/ 오픈 열다 Please open the window.
+68. walk /wɔːk/ 워크 걷다 I like to walk in the park.
+69. win /wɪn/ 윈 이기다 Our team won the game.
+70. teach /tiːtʃ/ 티치 가르치다 She teaches English at a high school.
+71. begin /bɪˈɡɪn/ 비긴 시작하다 The movie will begin at 7 PM.
+72. add /æd/ 애드 더하다 Add some salt to the soup.
+73. exist /ɪɡˈzɪst/ 이그지스트 존재하다 Does life exist on other planets?
+74. act /ækt/ 액트 행동하다 You need to act quickly in an emergency.
+75. base /beɪs/ 베이스 기반을 두다 The theory is based on scientific evidence.
+76. produce /prəˈduːs/ 프로듀스 생산하다 This factory produces cars.
+77. contain /kənˈteɪn/ 컨테인 포함하다 This box contains important documents.
+78. treat /triːt/ 트리트 대우하다 Treat others with respect.
+79. spend /spend/ 스펜드 소비하다 Don't spend all your money at once.
+80. increase /ɪnˈkriːs/ 인크리스 증가하다 The population is increasing rapidly.
+81. cause /kɔːz/ 코즈 야기하다 Smoking can cause serious health problems.
+82. stay /steɪ/ 스테이 머물다 I plan to stay in this city for a week.
+83. reach /riːtʃ/ 리치 도달하다 We should reach our destination by noon.
+84. kill /kɪl/ 킬 죽이다 Smoking kills thousands of people every year.
+85. remain /rɪˈmeɪn/ 리메인 남다 Please remain seated until the plane stops.
+86. suggest /səˈdʒest/ 서제스트 제안하다 I suggest we take a break now.
+87. raise /reɪz/ 레이즈 올리다 Raise your hand if you have a question.
+88. pass /pæs/ 패스 통과하다 You need to pass the exam to graduate.
+89. sell /sel/ 셀 팔다 They sell fresh vegetables at this market.
+90. require /rɪˈkwaɪər/ 리콰이어 요구하다 This job requires excellent communication skills.
+91. report /rɪˈpɔːrt/ 리포트 보고하다 Please report any suspicious activity.
+92. decide /dɪˈsaɪd/ 디사이드 결정하다 We need to decide on a meeting date.
+93. occur /əˈkɜːr/ 어커 발생하다 Accidents can occur if you're not careful.
+94. accept /əkˈsept/ 액셉트 받아들이다 I accept your apology.
+95. fall /fɔːl/ 폴 떨어지다 Be careful not to fall on the slippery floor.
+96. study /ˈstʌd.i/ 스터디 공부하다 I need to study for my exam.
+97. prove /pruːv/ 프루브 증명하다 Can you prove that your theory is correct?
+98. receive /rɪˈsiːv/ 리시브 받다 Did you receive my email?
+99. visit /ˈvɪz.ɪt/ 비짓 방문하다 I plan to visit my grandparents next week.
+100. organize /ˈɔːr.ɡə.naɪz/ 오가나이즈 조직하다 We need to organize the files in this office.
+English Pronunciation Korean Translation Examples
+101. improve /ɪmˈpruːv/ 임프루브 향상시키다 We need to improve our customer service.
+102. remember /rɪˈmem.bər/ 리멤버 기억하다 Try to remember where you left your keys.
+103. maintain /meɪnˈteɪn/ 메인테인 유지하다 It's important to maintain a healthy lifestyle.
+104. achieve /əˈtʃiːv/ 어치브 달성하다 With hard work, you can achieve your goals.
+105. supply /səˈplaɪ/ 서플라이 공급하다 This company supplies office equipment.
+106. mention /ˈmen.ʃən/ 멘션 언급하다 Don't forget to mention the deadline.
+107. identify /aɪˈden.tɪ.faɪ/ 아이덴티파이 식별하다 Can you identify the suspect?
+108. discuss /dɪˈskʌs/ 디스커스 토론하다 Let's discuss this issue in the meeting.
+109. reduce /rɪˈduːs/ 리듀스 줄이다 We need to reduce our expenses.
+110. indicate /ˈɪn.dɪ.keɪt/ 인디케이트 나타내다 These results indicate a positive trend.
+111. compare /kəmˈper/ 컴페어 비교하다 Let's compare the two products.
+112. suffer /ˈsʌf.ər/ 서퍼 고통받다 Many people suffer from allergies in spring.
+113. manage /ˈmæn.ɪdʒ/ 매니지 관리하다 She manages a team of 20 people.
+114. determine /dɪˈtɜː.mɪn/ 디터민 결정하다 We need to determine the cause of the problem.
+115. prepare /prɪˈper/ 프리페어 준비하다 I need to prepare for my presentation.
+116. serve /sɜːrv/ 서브 섬기다, 제공하다 This restaurant serves Italian food.
+117. experience /ɪkˈspɪə.ri.əns/ 익스피리언스 경험하다 I want to experience different cultures.
+118. seek /siːk/ 시크 찾다 We're seeking new employees for our company.
+119. share /ʃer/ 셰어 공유하다 Can you share your ideas with the group?
+120. avoid /əˈvɔɪd/ 어보이드 피하다 Try to avoid making the same mistake again.
+121. remove /rɪˈmuːv/ 리무브 제거하다 Please remove your shoes before entering.
+122. return /rɪˈtɜːrn/ 리턴 돌아오다 When do you plan to return from your trip?
+123. define /dɪˈfaɪn/ 디파인 정의하다 Can you define the term "globalization"?
+124. present /prɪˈzent/ 프리젠트 제시하다 I will present my findings at the conference.
+125. encourage /ɪnˈkɜː.rɪdʒ/ 인커리지 격려하다 Parents should encourage their children to read.
+126. form /fɔːrm/ 폼 형성하다 Water vapor can form clouds in the sky.
+127. face /feɪs/ 페이스 직면하다 We face many challenges in our daily lives.
+128. depend /dɪˈpend/ 디펜드 의존하다 Don't depend too much on others.
+129. attend /əˈtend/ 어텐드 참석하다 Will you attend the meeting tomorrow?
+130. carry /ˈkær.i/ 캐리 나르다 Can you help me carry these boxes?
+131. obtain /əbˈteɪn/ 업테인 얻다 You need to obtain a visa before traveling.
+132. recognize /ˈrek.əɡ.naɪz/ 레커그나이즈 인식하다 I didn't recognize you with your new hairstyle.
+133. forget /fərˈɡet/ 포겟 잊다 Don't forget to lock the door when you leave.
+134. recommend /ˌrek.əˈmend/ 레커멘드 추천하다 Can you recommend a good book to read?
+135. assume /əˈsuːm/ 어슘 가정하다 Don't assume that everyone agrees with you.
+136. ensure /ɪnˈʃʊr/ 인슈어 보장하다 We must ensure the safety of all passengers.
+137. establish /ɪˈstæb.lɪʃ/ 이스태블리시 설립하다 They plan to establish a new branch office.
+138. introduce /ˌɪn.trəˈduːs/ 인트로듀스 소개하다 Let me introduce you to my colleague.
+139. refer /rɪˈfɜːr/ 리퍼 언급하다 He referred to the incident in his speech.
+140. reflect /rɪˈflekt/ 리플렉트 반영하다 Your actions reflect your true character.
+141. prefer /prɪˈfɜːr/ 프리퍼 선호하다 I prefer tea to coffee.
+142. prevent /prɪˈvent/ 프리벤트 예방하다 Regular exercise can help prevent many diseases.
+143. tend /tend/ 텐드 ~하는 경향이 있다 Prices tend to rise during the holiday season.
+144. demonstrate /ˈdem.ən.streɪt/ 데먼스트레이트 증명하다 The experiment demonstrates how plants grow.
+145. survive /sərˈvaɪv/ 서바이브 생존하다 Some animals can survive in extreme conditions.
+146. solve /sɑːlv/ 솔브 해결하다 We need to solve this problem quickly.
+147. retain /rɪˈteɪn/ 리테인 유지하다 It's important to retain good employees.
+148. replace /rɪˈpleɪs/ 리플레이스 대체하다 We need to replace the broken window.
+149. reveal /rɪˈviːl/ 리빌 드러내다 The study reveals interesting patterns.
+150. discover /dɪˈskʌv.ər/ 디스커버 발견하다 Scientists discover new species every year.
+English Pronunciation Korean Translation Examples
+151. measure /ˈmeʒ.ər/ 메져 측정하다 We need to measure the room before buying furniture.
+152. adopt /əˈdɑːpt/ 어답트 채택하다 The company decided to adopt a new policy.
+153. generate /ˈdʒen.ə.reɪt/ 제너레이트 생성하다 Solar panels can generate electricity.
+154. react /riˈækt/ 리액트 반응하다 How did she react to the news?
+155. perform /pərˈfɔːrm/ 퍼폼 수행하다 The band will perform live tonight.
+156. acquire /əˈkwaɪər/ 어콰이어 습득하다 It takes time to acquire a new skill.
+157. confirm /kənˈfɜːrm/ 컨펌 확인하다 Please confirm your reservation by email.
+158. protect /prəˈtekt/ 프로텍트 보호하다 We need to protect endangered species.
+159. recover /rɪˈkʌv.ər/ 리커버 회복하다 It took him a month to recover from the flu.
+160. rely /rɪˈlaɪ/ 릴라이 의지하다 Don't rely too much on technology.
+161. extend /ɪkˈstend/ 익스텐드 확장하다 The company plans to extend its services.
+162. arrange /əˈreɪndʒ/ 어레인지 정리하다 Can you arrange a meeting for next week?
+163. propose /prəˈpoʊz/ 프로포즈 제안하다 I propose we take a different approach.
+164. intend /ɪnˈtend/ 인텐드 의도하다 I intend to finish this project by Friday.
+165. claim /kleɪm/ 클레임 주장하다 He claims to be an expert in this field.
+166. promote /prəˈmoʊt/ 프로모트 홍보하다 We need to promote our new product.
+167. respond /rɪˈspɑːnd/ 리스폰드 응답하다 Please respond to my email as soon as possible.
+168. derive /dɪˈraɪv/ 디라이브 유래하다 This word is derived from Latin.
+169. conduct /kənˈdʌkt/ 컨덕트 수행하다 The police will conduct an investigation.
+170. emerge /ɪˈmɜːrdʒ/ 이머지 나타나다 A new leader has emerged in the party.
+171. preserve /prɪˈzɜːrv/ 프리저브 보존하다 We must preserve our natural resources.
+172. attract /əˈtrækt/ 어트랙트 끌어들이다 This city attracts many tourists.
+173. destroy /dɪˈstrɔɪ/ 디스트로이 파괴하다 The earthquake destroyed many buildings.
+174. consist /kənˈsɪst/ 컨시스트 구성되다 The team consists of five members.
+175. assume /əˈsuːm/ 어슘 가정하다 Don't assume you know everything.
+176. guarantee /ˌɡær.ənˈtiː/ 개런티 보증하다 We guarantee the quality of our products.
+177. engage /ɪnˈɡeɪdʒ/ 인게이지 참여하다 Try to engage your audience during the presentation.
+178. obtain /əbˈteɪn/ 업테인 얻다 You need to obtain a license to drive.
+179. restrict /rɪˈstrɪkt/ 리스트릭트 제한하다 The government may restrict water usage during drought.
+180. estimate /ˈes.tɪ.meɪt/ 에스티메이트 추정하다 Can you estimate the cost of the project?
+181. encourage /ɪnˈkɜː.rɪdʒ/ 인커리지 격려하다 Parents should encourage their children to read.
+182. prevent /prɪˈvent/ 프리벤트 예방하다 Regular exercise can help prevent many diseases.
+183. suspend /səˈspend/ 서스펜드 중단하다 The game was suspended due to bad weather.
+184. combine /kəmˈbaɪn/ 컴바인 결합하다 Let's combine our ideas to create a better solution.
+185. justify /ˈdʒʌs.tɪ.faɪ/ 저스티파이 정당화하다 How can you justify such expensive purchases?
+186. capture /ˈkæp.tʃər/ 캡처 포착하다 The photographer managed to capture the perfect moment.
+187. appreciate /əˈpriː.ʃi.eɪt/ 어프리시에이트 감사하다 I really appreciate your help.
+188. expand /ɪkˈspænd/ 익스팬드 확장하다 The company plans to expand its operations overseas.
+189. gather /ˈɡæð.ər/ 개더 모으다 Let's gather more information before making a decision.
+190. indicate /ˈɪn.dɪ.keɪt/ 인디케이트 나타내다 The results indicate a positive trend.
+191. ignore /ɪɡˈnɔːr/ 이그노어 무시하다 Don't ignore the warning signs.
+192. imply /ɪmˈplaɪ/ 임플라이 암시하다 What are you trying to imply?
+193. dismiss /dɪsˈmɪs/ 디스미스 해고하다 The company had to dismiss several employees.
+194. explore /ɪkˈsplɔːr/ 익스플로어 탐험하다 We love to explore new places when we travel.
+195. convince /kənˈvɪns/ 컨빈스 설득하다 Can you convince him to change his mind?
+196. belong /bɪˈlɑːŋ/ 빌롱 속하다 Where do these books belong?
+197. approve /əˈpruːv/ 어프루브 승인하다 The committee needs to approve the budget.
+198. announce /əˈnaʊns/ 어나운스 발표하다 The company will announce its new product next week.
+199. enable /ɪˈneɪ.bəl/ 인에이블 가능하게 하다 This software will enable us to work more efficiently.
+200. predict /prɪˈdɪkt/ 프리딕트 예측하다 It's difficult to predict the weather accurately.
+English Pronunciation Korean Translation Examples
+201. insist /ɪnˈsɪst/ 인시스트 주장하다 He insists on paying for dinner.
+202. commit /kəˈmɪt/ 커밋 전념하다 We need to commit to this project fully.
+203. admit /ədˈmɪt/ 어드밋 인정하다 He admitted making a mistake.
+204. resist /rɪˈzɪst/ 리지스트 저항하다 It's hard to resist chocolate when you're on a diet.
+205. deserve /dɪˈzɜːrv/ 디저브 ~할 만하다 You deserve a break after working so hard.
+206. handle /ˈhæn.dəl/ 핸들 다루다 How do you handle stress?
+207. mention /ˈmen.ʃən/ 멘션 언급하다 Don't forget to mention the deadline.
+208. carry out /ˌker.iˈaʊt/ 캐리 아웃 수행하다 We need to carry out more research.
+209. reveal /rɪˈviːl/ 리빌 드러내다 The study reveals interesting patterns.
+210. recover /rɪˈkʌv.ər/ 리커버 회복하다 It took her months to recover from the accident.
+211. rely on /rɪˈlaɪ ɒn/ 릴라이 온 의존하다 Don't rely on just one source of information.
+212. achieve /əˈtʃiːv/ 어치브 달성하다 She achieved her goal of running a marathon.
+213. influence /ˈɪn.flu.əns/ 인플루언스 영향을 미치다 Social media can influence public opinion.
+214. persuade /pərˈsweɪd/ 퍼스웨이드 설득하다 Can you persuade him to join our team?
+215. affect /əˈfekt/ 어펙트 영향을 미치다 How will this decision affect our future?
+216. argue /ˈɑːr.ɡjuː/ 아규 논쟁하다 They often argue about politics.
+217. realize /ˈriː.ə.laɪz/ 리얼라이즈 깨닫다 I didn't realize how late it was.
+218. maintain /meɪnˈteɪn/ 메인테인 유지하다 It's important to maintain a healthy lifestyle.
+219. prove /pruːv/ 프루브 증명하다 Can you prove that your theory is correct?
+220. spread /spred/ 스프레드 퍼뜨리다 The news spread quickly on social media.
+221. express /ɪkˈspres/ 익스프레스 표현하다 It's sometimes hard to express your feelings.
+222. identify /aɪˈden.tɪ.faɪ/ 아이덴티파이 식별하다 Can you identify the suspect in this photo?
+223. elect /ɪˈlekt/ 일렉트 선출하다 They elected her as the new president.
+224. permit /pərˈmɪt/ 퍼밋 허용하다 Smoking is not permitted in this building.
+225. reduce /rɪˈduːs/ 리듀스 줄이다 We need to reduce our energy consumption.
+226. discover /dɪˈskʌv.ər/ 디스커버 발견하다 Scientists discover new species every year.
+227. demand /dɪˈmænd/ 디맨드 요구하다 The workers are demanding better conditions.
+228. remind /rɪˈmaɪnd/ 리마인드 상기시키다 Remind me to buy milk on the way home.
+229. remove /rɪˈmuːv/ 리무브 제거하다 Please remove your shoes before entering.
+230. suppose /səˈpoʊz/ 서포우즈 가정하다 I suppose we could try that approach.
+231. accept /əkˈsept/ 액셉트 받아들이다 Will you accept this job offer?
+232. concentrate /ˈkɑːn.sən.treɪt/ 컨센트레이트 집중하다 It's hard to concentrate with all this noise.
+233. imagine /ɪˈmædʒ.ɪn/ 이매진 상상하다 Can you imagine life without the internet?
+234. exist /ɪɡˈzɪst/ 이그지스트 존재하다 Does life exist on other planets?
+235. reform /rɪˈfɔːrm/ 리폼 개혁하다 The government plans to reform the education system.
+236. decline /dɪˈklaɪn/ 디클라인 거절하다 He declined our invitation to the party.
+237. deliver /dɪˈlɪv.ər/ 딜리버 배달하다 The package should be delivered tomorrow.
+238. survive /sərˈvaɪv/ 서바이브 생존하다 How long can a person survive without water?
+239. manage /ˈmæn.ɪdʒ/ 매니지 관리하다 She manages a team of 20 people.
+240. arise /əˈraɪz/ 어라이즈 발생하다 Problems often arise when you least expect them.
+241. dominate /ˈdɑː.mɪ.neɪt/ 도미네이트 지배하다 The company dominates the smartphone market.
+242. emerge /ɪˈmɜːrdʒ/ 이머지 나타나다 A new political party has emerged.
+243. hesitate /ˈhez.ɪ.teɪt/ 헤지테이트 망설이다 Don't hesitate to ask if you have any questions.
+244. possess /pəˈzes/ 포제스 소유하다 He possesses excellent leadership skills.
+245. throw /θroʊ/ 쓰로우 던지다 Can you throw me the ball?
+246. dismiss /dɪsˈmɪs/ 디스미스 해고하다 The company had to dismiss several employees.
+247. unite /juːˈnaɪt/ 유나이트 통합하다 The crisis united the country.
+248. warn /wɔːrn/ 원 경고하다 I warned you about the dangers.
+249. witness /ˈwɪt.nəs/ 위트니스 목격하다 Did anyone witness the accident?
+250. withdraw /wɪðˈdrɔː/ 위드드로 철회하다 He decided to withdraw from the competition.
+English Pronunciation Korean Translation Examples
+251. abandon /əˈbæn.dən/ 어밴든 포기하다 We had to abandon the project due to lack of funding.
+252. abolish /əˈbɑː.lɪʃ/ 어볼리시 폐지하다 The government decided to abolish that old law.
+253. accelerate /əkˈsel.ə.reɪt/ 액셀러레이트 가속하다 The car began to accelerate on the highway.
+254. accompany /əˈkʌm.pə.ni/ 어컴퍼니 동행하다 Will you accompany me to the concert?
+255. accumulate /əˈkjuː.mjə.leɪt/ 어큐뮬레이트 축적하다 Dust tends to accumulate on unused furniture.
+256. adapt /əˈdæpt/ 어댑트 적응하다 Animals must adapt to survive climate change.
+257. adhere /ədˈhɪr/ 어드히어 고수하다 We must adhere to the rules of the competition.
+258. adjust /əˈdʒʌst/ 어저스트 조정하다 You may need to adjust the volume on your TV.
+259. advocate /ˈæd.və.keɪt/ 애드버케이트 옹호하다 She advocates for animal rights.
+260. affirm /əˈfɜːrm/ 어펌 확언하다 The court affirmed the lower court's decision.
+261. allocate /ˈæl.ə.keɪt/ 앨로케이트 할당하다 We need to allocate more resources to this project.
+262. alter /ˈɔːl.tər/ 올터 변경하다 The tailor can alter your dress to fit better.
+263. analyze /ˈæn.əl.aɪz/ 애널라이즈 분석하다 We need to analyze the data carefully.
+264. anticipate /ænˈtɪs.ə.peɪt/ 안티시페이트 예상하다 We didn't anticipate such a large crowd.
+265. appeal /əˈpiːl/ 어필 호소하다 His speech appealed to many voters.
+266. appoint /əˈpɔɪnt/ 어포인트 임명하다 The president will appoint a new cabinet member.
+267. approach /əˈproʊtʃ/ 어프로치 접근하다 How should we approach this problem?
+268. arise /əˈraɪz/ 어라이즈 발생하다 New challenges may arise as we proceed.
+269. assess /əˈses/ 어세스 평가하다 We need to assess the damage after the storm.
+270. assign /əˈsaɪn/ 어사인 할당하다 The teacher will assign homework tomorrow.
+271. assist /əˈsɪst/ 어시스트 돕다 Can you assist me with this task?
+272. assume /əˈsuːm/ 어슘 가정하다 Don't assume you know what I'm thinking.
+273. assure /əˈʃʊr/ 어슈어 확신시키다 I can assure you that the product is safe.
+274. attach /əˈtætʃ/ 어태치 첨부하다 Please attach your resume to the email.
+275. attain /əˈteɪn/ 어테인 달성하다 It took years of hard work to attain his goal.
+276. attribute /əˈtrɪb.juːt/ 어트리뷰트 귀속시키다 We can attribute our success to teamwork.
+277. authorize /ˈɔː.θər.aɪz/ 오써라이즈 승인하다 Only the manager can authorize this transaction.
+278. cease /siːs/ 시스 중단하다 The rain finally ceased after three days.
+279. cite /saɪt/ 사이트 인용하다 He cited several studies to support his argument.
+280. clarify /ˈkler.ə.faɪ/ 클래리파이 명확히 하다 Can you clarify what you mean by that?
+281. classify /ˈklæs.ə.faɪ/ 클래시파이 분류하다 Scientists classify animals into different species.
+282. collaborate /kəˈlæb.ə.reɪt/ 콜래버레이트 협력하다 Our teams need to collaborate on this project.
+283. collapse /kəˈlæps/ 콜랩스 붕괴하다 The old building collapsed during the earthquake.
+284. commemorate /kəˈmem.ə.reɪt/ 커메모레이트 기념하다 We commemorate the end of the war every year.
+285. commence /kəˈmens/ 커멘스 시작하다 The ceremony will commence at noon.
+286. compensate /ˈkɑːm.pen.seɪt/ 컴펜세이트 보상하다 The company will compensate employees for overtime.
+287. compete /kəmˈpiːt/ 컴피트 경쟁하다 Many athletes compete in the Olympic Games.
+288. compile /kəmˈpaɪl/ 컴파일 편집하다 We need to compile all the data into a report.
+289. complement /ˈkɑːm.plə.ment/ 컴플리먼트 보완하다 The wine complements the meal perfectly.
+290. comply /kəmˈplaɪ/ 컴플라이 준수하다 All employees must comply with safety regulations.
+291. compose /kəmˈpoʊz/ 컴포즈 구성하다 Mozart composed many beautiful symphonies.
+292. compute /kəmˈpjuːt/ 컴퓨트 계산하다 The software can compute complex equations quickly.
+293. conceive /kənˈsiːv/ 컨시브 구상하다 It's hard to conceive of a world without internet.
+294. conclude /kənˈkluːd/ 컨클루드 결론 짓다 We can conclude that the experiment was successful.
+295. condemn /kənˈdem/ 컨뎀 비난하다 Many people condemned the politician's actions.
+296. conduct /kənˈdʌkt/ 컨덕트 수행하다 The scientist will conduct a series of experiments.
+297. confer /kənˈfɜːr/ 컨퍼 협의하다 The managers will confer about the new policy.
+298. confine /kənˈfaɪn/ 컨파인 제한하다 The zoo tries to confine animals in natural habitats.
+299. confront /kənˈfrʌnt/ 컨프런트 직면하다 We must confront these issues head-on.
+300. consent /kənˈsent/ 컨센트 동의하다 Both parties must consent to the agreement.
+English Pronunciation Korean Translation Examples
+301. conserve /kənˈsɜːrv/ 컨서브 보존하다 We must conserve our natural resources.
+302. consist /kənˈsɪst/ 컨시스트 구성되다 The team consists of five members.
+303. constitute /ˈkɑːn.stə.tuːt/ 컨스티튜트 구성하다 These rules constitute our code of conduct.
+304. constrain /kənˈstreɪn/ 컨스트레인 제약하다 Budget cuts may constrain our plans.
+305. construct /kənˈstrʌkt/ 컨스트럭트 건설하다 They plan to construct a new shopping mall.
+306. consult /kənˈsʌlt/ 컨설트 상담하다 You should consult a doctor about that pain.
+307. consume /kənˈsuːm/ 컨슘 소비하다 Americans consume a lot of fast food.
+308. contain /kənˈteɪn/ 컨테인 포함하다 This box contains important documents.
+309. contemplate /ˈkɑːn.təm.pleɪt/ 컨템플레이트 숙고하다 He's contemplating a career change.
+310. contend /kənˈtend/ 컨텐드 주장하다 She contends that the policy is unfair.
+311. contract /kənˈtrækt/ 컨트랙트 계약하다 The company contracted to build the bridge.
+312. contradict /ˌkɑːn.trəˈdɪkt/ 컨트라딕트 모순되다 His actions contradict his words.
+313. contribute /kənˈtrɪb.juːt/ 컨트리뷰트 기여하다 Everyone should contribute to the project.
+314. convert /kənˈvɜːrt/ 컨버트 전환하다 We need to convert the file to PDF format.
+315. convey /kənˈveɪ/ 컨베이 전달하다 Please convey my thanks to the team.
+316. coordinate /koʊˈɔːr.də.neɪt/ 코오디네이트 조정하다 Someone needs to coordinate the event.
+317. correspond /ˌkɔːr.əˈspɑːnd/ 코레스폰드 일치하다 Does your experience correspond to the job requirements?
+318. criticize /ˈkrɪt̬.ə.saɪz/ 크리티사이즈 비판하다 It's easy to criticize others' work.
+319. cultivate /ˈkʌl.tə.veɪt/ 컬티베이트 경작하다 Farmers cultivate various crops in this region.
+320. debate /dɪˈbeɪt/ 디베이트 토론하다 The candidates will debate on TV tonight.
+321. deceive /dɪˈsiːv/ 디시브 속이다 Don't try to deceive me with false promises.
+322. declare /dɪˈkler/ 디클레어 선언하다 The country declared its independence.
+323. decline /dɪˈklaɪn/ 디클라인 거절하다 He politely declined the invitation.
+324. dedicate /ˈded.ə.keɪt/ 데디케이트 헌신하다 She dedicated her life to helping others.
+325. define /dɪˈfaɪn/ 디파인 정의하다 Can you define the term "democracy"?
+326. delay /dɪˈleɪ/ 딜레이 지연하다 Bad weather delayed our flight.
+327. delegate /ˈdel.ə.ɡeɪt/ 델리게이트 위임하다 Managers should learn to delegate tasks.
+328. delete /dɪˈliːt/ 딜리트 삭제하다 Remember to delete old files from your computer.
+329. deliberate /dɪˈlɪb.ər.ət/ 딜리버레이트 심사숙고하다 The jury deliberated for hours before reaching a verdict.
+330. demonstrate /ˈdem.ən.streɪt/ 데먼스트레이트 증명하다 The experiment demonstrates how plants grow.
+331. denote /dɪˈnoʊt/ 디노트 나타내다 In this context, the symbol denotes infinity.
+332. depict /dɪˈpɪkt/ 디픽트 묘사하다 The painting depicts a rural landscape.
+333. derive /dɪˈraɪv/ 디라이브 유래하다 Many English words derive from Latin.
+334. designate /ˈdez.ɪɡ.neɪt/ 데지그네이트 지정하다 The boss designated him as the new team leader.
+335. detect /dɪˈtekt/ 디텍트 감지하다 The security system can detect any intruders.
+336. determine /dɪˈtɜːr.mɪn/ 디터민 결정하다 We need to determine the cause of the problem.
+337. devote /dɪˈvoʊt/ 디보트 전념하다 She devotes most of her time to studying.
+338. differentiate /ˌdɪf.əˈren.ʃi.eɪt/ 디퍼렌시에이트 구별하다 It's important to differentiate between facts and opinions.
+339. diminish /dɪˈmɪn.ɪʃ/ 디미니시 감소하다 The pain gradually diminished over time.
+340. disclose /dɪsˈkloʊz/ 디스클로즈 공개하다 The company must disclose its financial information.
+341. discriminate /dɪˈskrɪm.ə.neɪt/ 디스크리미네이트 차별하다 It's illegal to discriminate against employees based on age.
+342. dispose /dɪˈspoʊz/ 디스포즈 처분하다 Please dispose of your trash properly.
+343. distinguish /dɪˈstɪŋ.ɡwɪʃ/ 디스팅귀시 구별하다 Can you distinguish between these two shades of blue?
+344. distribute /dɪˈstrɪb.juːt/ 디스트리뷰트 분배하다 The charity will distribute food to the homeless.
+345. diversify /daɪˈvɜːr.sə.faɪ/ 다이버시파이 다양화하다 It's wise to diversify your investment portfolio.
+346. document /ˈdɑːk.jə.ment/ 다큐먼트 문서화하다 Make sure to document all your expenses.
+347. dominate /ˈdɑː.mə.neɪt/ 도미네이트 지배하다 The company dominates the smartphone market.
+348. eliminate /ɪˈlɪm.ə.neɪt/ 일리미네이트 제거하다 We need to eliminate unnecessary expenses.
+349. emphasize /ˈem.fə.saɪz/ 엠퍼사이즈 강조하다 The teacher emphasized the importance of practice.
+350. encounter /ɪnˈkaʊn.tər/ 인카운터 마주치다 We may encounter some problems along the way.
+English Pronunciation Korean Translation Examples
+351. enhance /ɪnˈhæns/ 인핸스 향상시키다 This software will enhance your productivity.
+352. ensure /ɪnˈʃʊr/ 인슈어 보장하다 We must ensure the safety of all passengers.
+353. entail /ɪnˈteɪl/ 인테일 수반하다 The job entails a lot of travel.
+354. enumerate /ɪˈnuː.mə.reɪt/ 이뉴머레이트 열거하다 Can you enumerate the main points of the argument?
+355. equate /ɪˈkweɪt/ 이퀘이트 동일시하다 Some people equate wealth with happiness.
+356. erode /ɪˈroʊd/ 이로드 침식하다 The coastline has eroded over time.
+357. establish /ɪˈstæb.lɪʃ/ 이스태블리시 설립하다 They plan to establish a new branch office.
+358. estimate /ˈes.tə.meɪt/ 에스티메이트 추정하다 Can you estimate how long the project will take?
+359. evaluate /ɪˈvæl.ju.eɪt/ 이밸류에이트 평가하다 We need to evaluate the results of the experiment.
+360. evoke /ɪˈvoʊk/ 이보크 불러일으키다 The smell of cookies evokes childhood memories.
+361. evolve /ɪˈvɑːlv/ 이볼브 진화하다 The company's strategy has evolved over time.
+362. exceed /ɪkˈsiːd/ 익시드 초과하다 The cost exceeded our budget.
+363. exclude /ɪkˈskluːd/ 익스클루드 제외하다 The price excludes shipping costs.
+364. execute /ˈek.sə.kjuːt/ 엑세큐트 실행하다 The plan was executed perfectly.
+365. exempt /ɪɡˈzempt/ 익젬프트 면제하다 Students are exempt from paying the fee.
+366. exhaust /ɪɡˈzɔːst/ 익조스트 소진하다 The long hike exhausted me.
+367. exhibit /ɪɡˈzɪb.ɪt/ 익시빗 전시하다 The museum will exhibit Picasso's paintings.
+368. expand /ɪkˈspænd/ 익스팬드 확장하다 The company plans to expand into new markets.
+369. expire /ɪkˈspaɪər/ 익스파이어 만료되다 My passport will expire next month.
+370. exploit /ɪkˈsplɔɪt/ 익스플로잇 이용하다 We need to exploit our resources wisely.
+371. export /ɪkˈspɔːrt/ 익스포트 수출하다 The country exports a lot of agricultural products.
+372. expose /ɪkˈspoʊz/ 익스포즈 노출시키다 The scandal exposed corruption in the government.
+373. extend /ɪkˈstend/ 익스텐드 연장하다 Can we extend the deadline by a week?
+374. extract /ɪkˈstrækt/ 익스트랙트 추출하다 Scientists can extract DNA from blood samples.
+375. facilitate /fəˈsɪl.ə.teɪt/ 퍼실리테이트 촉진하다 The new policy will facilitate international trade.
+376. feature /ˈfiː.tʃər/ 피처 특징으로 하다 The phone features a high-resolution camera.
+377. finance /ˈfaɪ.næns/ 파이낸스 자금을 대다 The bank agreed to finance the project.
+378. fluctuate /ˈflʌk.tʃu.eɪt/ 플럭츄에이트 변동하다 Stock prices tend to fluctuate daily.
+379. focus /ˈfoʊ.kəs/ 포커스 집중하다 We need to focus on solving this problem.
+380. formulate /ˈfɔːr.mjə.leɪt/ 포뮬레이트 공식화하다 The team will formulate a new strategy.
+381. foster /ˈfɑː.stər/ 포스터 양성하다 The program aims to foster creativity in children.
+382. function /ˈfʌŋk.ʃən/ 펑션 기능하다 The machine is not functioning properly.
+383. generate /ˈdʒen.ə.reɪt/ 제너레이트 생성하다 The solar panels generate electricity.
+384. govern /ˈɡʌv.ərn/ 거번 통치하다 Laws govern how businesses operate.
+385. grant /ɡrænt/ 그랜트 허가하다 The university granted him a scholarship.
+386. guarantee /ˌɡær.ənˈtiː/ 개런티 보증하다 We guarantee the quality of our products.
+387. guide /ɡaɪd/ 가이드 안내하다 The tour guide will guide us through the museum.
+388. harbor /ˈhɑːr.bər/ 하버 품다 He harbors a grudge against his former boss.
+389. highlight /ˈhaɪ.laɪt/ 하이라이트 강조하다 The report highlights the main issues.
+390. hinder /ˈhɪn.dər/ 힌더 방해하다 Bad weather may hinder our travel plans.
+391. illustrate /ˈɪl.ə.streɪt/ 일러스트레이트 설명하다 Can you illustrate your point with an example?
+392. imitate /ˈɪm.ə.teɪt/ 이미테이트 모방하다 Children often imitate their parents' behavior.
+393. impact /ɪmˈpækt/ 임팩트 영향을 미치다 The new law will impact small businesses.
+394. implement /ˈɪm.plə.ment/ 임플리먼트 시행하다 We will implement the new system next month.
+395. imply /ɪmˈplaɪ/ 임플라이 암시하다 What are you trying to imply?
+396. import /ɪmˈpɔːrt/ 임포트 수입하다 The country imports most of its oil.
+397. impose /ɪmˈpoʊz/ 임포즈 부과하다 The government may impose new taxes.
+398. improve /ɪmˈpruːv/ 임프루브 개선하다 We need to improve our customer service.
+399. include /ɪnˈkluːd/ 인클루드 포함하다 Does the price include breakfast?
+400. incorporate /ɪnˈkɔːr.pə.reɪt/ 인코포레이트 통합하다 We should incorporate these ideas into our plan.
+English Pronunciation Korean Translation Examples
+401. incur /ɪnˈkɜːr/ 인커 초래하다 The company incurred significant losses last year.
+402. indicate /ˈɪn.də.keɪt/ 인디케이트 나타내다 The results indicate a positive trend.
+403. induce /ɪnˈduːs/ 인듀스 유도하다 The drug can induce sleep.
+404. infer /ɪnˈfɜːr/ 인퍼 추론하다 From his smile, I inferred that he had good news.
+405. inflate /ɪnˈfleɪt/ 인플레이트 부풀리다 We need to inflate the tires before the trip.
+406. influence /ˈɪn.flu.əns/ 인플루언스 영향을 미치다 Social media can influence public opinion.
+407. inform /ɪnˈfɔːrm/ 인폼 알리다 Please inform me of any changes to the schedule.
+408. initiate /ɪˈnɪʃ.i.eɪt/ 이니시에이트 시작하다 The company plans to initiate a new project.
+409. inject /ɪnˈdʒekt/ 인젝트 주입하다 The doctor will inject the medicine into your arm.
+410. injure /ˈɪn.dʒər/ 인저 다치게 하다 He injured his knee while playing soccer.
+411. innovate /ˈɪn.ə.veɪt/ 이노베이트 혁신하다 Companies must innovate to stay competitive.
+412. insert /ɪnˈsɜːrt/ 인서트 삽입하다 Insert the key and turn it clockwise.
+413. inspect /ɪnˈspekt/ 인스펙트 검사하다 The health department will inspect the restaurant.
+414. inspire /ɪnˈspaɪər/ 인스파이어 영감을 주다 Her speech inspired the audience.
+415. install /ɪnˈstɔːl/ 인스톨 설치하다 You need to install the software before using it.
+416. institute /ˈɪn.stə.tuːt/ 인스티튜트 제정하다 The company will institute new policies next month.
+417. instruct /ɪnˈstrʌkt/ 인스트럭트 지시하다 The teacher instructed the students to open their books.
+418. integrate /ˈɪn.tə.ɡreɪt/ 인테그레이트 통합하다 We need to integrate the new system with the existing one.
+419. intensify /ɪnˈten.sə.faɪ/ 인텐시파이 강화하다 The storm is expected to intensify overnight.
+420. interact /ˌɪn.t̬ərˈækt/ 인터랙트 상호작용하다 Students should interact more during class discussions.
+421. interpret /ɪnˈtɜːr.prət/ 인터프릿 해석하다 It's difficult to interpret the meaning of this poem.
+422. interrupt /ˌɪn.t̬əˈrʌpt/ 인터럽트 방해하다 Please don't interrupt while I'm speaking.
+423. intervene /ˌɪn.t̬ərˈviːn/ 인터빈 개입하다 The UN may intervene in the conflict.
+424. introduce /ˌɪn.trəˈduːs/ 인트로듀스 소개하다 Let me introduce you to our new team member.
+425. invent /ɪnˈvent/ 인벤트 발명하다 Alexander Graham Bell invented the telephone.
+426. invest /ɪnˈvest/ 인베스트 투자하다 It's wise to invest in your education.
+427. investigate /ɪnˈves.tə.ɡeɪt/ 인베스티게이트 조사하다 The police are investigating the crime.
+428. invoke /ɪnˈvoʊk/ 인보크 호출하다 The lawyer invoked an obscure law to win the case.
+429. involve /ɪnˈvɑːlv/ 인볼브 수반하다 This project involves a lot of teamwork.
+430. isolate /ˈaɪ.sə.leɪt/ 아이솔레이트 고립시키다 We need to isolate the infected patients.
+431. issue /ˈɪʃ.uː/ 이슈 발행하다 The bank will issue new credit cards next month.
+432. justify /ˈdʒʌs.tə.faɪ/ 저스티파이 정당화하다 How can you justify such expensive purchases?
+433. launch /lɔːntʃ/ 론치 출시하다 The company will launch its new product next week.
+434. levy /ˈlev.i/ 레비 부과하다 The government plans to levy a new tax on imports.
+435. link /lɪŋk/ 링크 연결하다 Scientists have linked smoking to lung cancer.
+436. locate /loʊˈkeɪt/ 로케이트 위치를 찾다 Can you help me locate my lost phone?
+437. maintain /meɪnˈteɪn/ 메인테인 유지하다 It's important to maintain a healthy diet.
+438. manipulate /məˈnɪp.jə.leɪt/ 매니퓰레이트 조종하다 Don't try to manipulate the data to suit your argument.
+439. manufacture /ˌmæn.jəˈfæk.tʃər/ 매뉴팩처 제조하다 This company manufactures cars.
+440. maximize /ˈmæk.sə.maɪz/ 맥시마이즈 극대화하다 We need to maximize our profits this quarter.
+441. measure /ˈmeʒ.ər/ 메저 측정하다 The doctor will measure your blood pressure.
+442. merge /mɜːrdʒ/ 머지 합병하다 The two companies plan to merge next year.
+443. minimize /ˈmɪn.ə.maɪz/ 미니마이즈 최소화하다 We should minimize the risk of accidents.
+444. modify /ˈmɑː.də.faɪ/ 모디파이 수정하다 We may need to modify our plans.
+445. monitor /ˈmɑː.nə.t̬ər/ 모니터 감시하다 Parents should monitor their children's internet use.
+446. motivate /ˈmoʊ.t̬ə.veɪt/ 모티베이트 동기부여하다 Good leaders know how to motivate their team.
+447. negotiate /nɪˈɡoʊ.ʃi.eɪt/ 니고시에이트 협상하다 We need to negotiate better terms for the contract.
+448. notify /ˈnoʊ.t̬ə.faɪ/ 노티파이 통지하다 Please notify me when the package arrives.
+449. nourish /ˈnɜː.rɪʃ/ 너리시 영양을 공급하다 A balanced diet nourishes your body.
+450. obtain /əbˈteɪn/ 업테인 얻다 You need to obtain a permit before starting construction.
+English Pronunciation Korean Translation Examples
+451. occupy /ˈɑːk.jə.paɪ/ 아큐파이 점령하다 The protesters occupied the building.
+452. occur /əˈkɜːr/ 어커 발생하다 Accidents can occur if you're not careful.
+453. offset /ˈɑːf.set/ 오프셋 상쇄하다 The company's gains offset its losses.
+454. operate /ˈɑːp.ə.reɪt/ 아퍼레이트 운영하다 This machine is difficult to operate.
+455. optimize /ˈɑːp.tə.maɪz/ 옵티마이즈 최적화하다 We need to optimize our website for mobile devices.
+456. originate /əˈrɪdʒ.ə.neɪt/ 어리지네이트 유래하다 This custom originated in ancient Greece.
+457. outline /ˈaʊt.laɪn/ 아웃라인 개요를 말하다 Can you outline your proposal for us?
+458. overcome /ˌoʊ.vərˈkʌm/ 오버컴 극복하다 She overcame many obstacles to achieve success.
+459. overlap /ˌoʊ.vərˈlæp/ 오버랩 중복되다 Our work schedules overlap by two hours.
+460. oversee /ˌoʊ.vərˈsiː/ 오버시 감독하다 The manager oversees all departmental operations.
+461. participate /pɑːrˈtɪs.ə.peɪt/ 파티시페이트 참여하다 Everyone is encouraged to participate in the discussion.
+462. perceive /pərˈsiːv/ 퍼시브 인지하다 How do you perceive this situation?
+463. perform /pərˈfɔːrm/ 퍼폼 수행하다 The actor will perform on stage tonight.
+464. persist /pərˈsɪst/ 퍼시스트 지속하다 If the symptoms persist, consult a doctor.
+465. persuade /pərˈsweɪd/ 퍼스웨이드 설득하다 Can you persuade him to change his mind?
+466. pertain /pərˈteɪn/ 퍼테인 관계하다 These rules pertain to all employees.
+467. place /pleɪs/ 플레이스 배치하다 Please place the book on the shelf.
+468. portray /pɔːrˈtreɪ/ 포트레이 묘사하다 The movie portrays life in the 1950s.
+469. possess /pəˈzes/ 포제스 소유하다 He possesses great talent as a musician.
+470. postpone /poʊˈspoʊn/ 포스폰 연기하다 We may need to postpone the meeting.
+471. predict /prɪˈdɪkt/ 프리딕트 예측하다 It's difficult to predict the weather accurately.
+472. prefer /prɪˈfɜːr/ 프리퍼 선호하다 I prefer tea to coffee.
+473. prepare /prɪˈper/ 프리페어 준비하다 Let's prepare for the presentation.
+474. prescribe /prɪˈskraɪb/ 프리스크라이브 처방하다 The doctor prescribed antibiotics for the infection.
+475. present /prɪˈzent/ 프리젠트 제시하다 She will present her findings at the conference.
+476. preserve /prɪˈzɜːrv/ 프리저브 보존하다 We must preserve our natural resources.
+477. prevent /prɪˈvent/ 프리벤트 예방하다 Regular exercise can help prevent heart disease.
+478. proceed /prəˈsiːd/ 프로시드 진행하다 You may proceed with your question.
+479. process /ˈprɑː.ses/ 프로세스 처리하다 It takes time to process all the information.
+480. produce /prəˈduːs/ 프로듀스 생산하다 This factory produces cars.
+481. prohibit /prəˈhɪb.ɪt/ 프로히빗 금지하다 Smoking is prohibited in this building.
+482. promote /prəˈmoʊt/ 프로모트 홍보하다 We need to promote our new product.
+483. propose /prəˈpoʊz/ 프로포즈 제안하다 I propose we take a different approach.
+484. protect /prəˈtekt/ 프로텍트 보호하다 Sunscreen protects your skin from UV rays.
+485. prove /pruːv/ 프루브 증명하다 Can you prove that your theory is correct?
+486. provide /prəˈvaɪd/ 프로바이드 제공하다 The company provides free lunch for employees.
+487. publish /ˈpʌb.lɪʃ/ 퍼블리시 출판하다 She hopes to publish her novel next year.
+488. purchase /ˈpɜːr.tʃəs/ 퍼체스 구매하다 I need to purchase a new computer.
+489. pursue /pərˈsuː/ 퍼슈 추구하다 He decided to pursue a career in medicine.
+490. qualify /ˈkwɑː.lə.faɪ/ 퀄리파이 자격을 갖추다 You need to qualify for a loan before buying a house.
+491. question /ˈkwes.tʃən/ 퀘스천 질문하다 Don't be afraid to question authority.
+492. quote /kwoʊt/ 쿼트 인용하다 Can you quote a price for this job?
+493. raise /reɪz/ 레이즈 올리다 The company plans to raise prices next month.
+494. range /reɪndʒ/ 레인지 범위를 정하다 Prices range from $10 to $100.
+495. react /riˈækt/ 리액트 반응하다 How did she react to the news?
+496. realize /ˈriː.ə.laɪz/ 리얼라이즈 깨닫다 I didn't realize how late it was.
+497. recall /rɪˈkɔːl/ 리콜 회상하다 Can you recall what happened that night?
+498. receive /rɪˈsiːv/ 리시브 받다 Did you receive my email?
+499. recognize /ˈrek.əɡ.naɪz/ 레커그나이즈 인식하다 I didn't recognize you with your new hairstyle.
+500. recommend /ˌrek.əˈmend/ 레커멘드 추천하다 Can you recommend a good restaurant?
+English Pronunciation Korean Translation Examples
+501. reconcile /ˈrek.ən.saɪl/ 레컨사일 화해시키다 We need to reconcile our differences.
+502. reconstruct /ˌriː.kənˈstrʌkt/ 리컨스트럭트 재건하다 They plan to reconstruct the old building.
+503. record /rɪˈkɔːrd/ 리코드 기록하다 Please record your observations in this notebook.
+504. reduce /rɪˈduːs/ 리듀스 줄이다 We need to reduce our expenses.
+505. refer /rɪˈfɜːr/ 리퍼 언급하다 He referred to the incident in his speech.
+506. reflect /rɪˈflekt/ 리플렉트 반영하다 The mirror reflects your image.
+507. reform /rɪˈfɔːrm/ 리폼 개혁하다 The government plans to reform the education system.
+508. refrain /rɪˈfreɪn/ 리프레인 삼가다 Please refrain from smoking in this area.
+509. regard /rɪˈɡɑːrd/ 리가드 여기다 I regard him as a good friend.
+510. regulate /ˈreɡ.jə.leɪt/ 레귤레이트 규제하다 The government regulates the banking industry.
+511. reinforce /ˌriː.ɪnˈfɔːrs/ 리인포스 강화하다 We need to reinforce the importance of safety.
+512. reject /rɪˈdʒekt/ 리젝트 거절하다 The committee rejected his proposal.
+513. relate /rɪˈleɪt/ 릴레이트 관련짓다 How does this relate to our discussion?
+514. release /rɪˈliːs/ 릴리스 방출하다 The company will release a new product next month.
+515. rely /rɪˈlaɪ/ 릴라이 의지하다 Don't rely too much on others.
+516. remain /rɪˈmeɪn/ 리메인 남다 Please remain seated until the plane stops.
+517. remark /rɪˈmɑːrk/ 리마크 말하다 He remarked on the beautiful weather.
+518. remove /rɪˈmuːv/ 리무브 제거하다 Please remove your shoes before entering.
+519. render /ˈren.dər/ 렌더 제공하다 The computer can render realistic 3D images.
+520. renew /rɪˈnuː/ 리뉴 갱신하다 Don't forget to renew your passport.
+521. repair /rɪˈper/ 리페어 수리하다 We need to repair the broken window.
+522. replace /rɪˈpleɪs/ 리플레이스 대체하다 We need to replace the old equipment.
+523. reply /rɪˈplaɪ/ 리플라이 대답하다 Please reply to my email as soon as possible.
+524. report /rɪˈpɔːrt/ 리포트 보고하다 You should report any suspicious activity.
+525. represent /ˌrep.rɪˈzent/ 레프리젠트 대표하다 The lawyer will represent you in court.
+526. request /rɪˈkwest/ 리퀘스트 요청하다 Can I request a day off next week?
+527. require /rɪˈkwaɪər/ 리콰이어 요구하다 This job requires excellent communication skills.
+528. rescue /ˈres.kjuː/ 레스큐 구조하다 The firefighters rescued the cat from the tree.
+529. resemble /rɪˈzem.bəl/ 리젬블 닮다 You resemble your mother.
+530. reserve /rɪˈzɜːrv/ 리저브 예약하다 I'd like to reserve a table for two.
+531. resist /rɪˈzɪst/ 리지스트 저항하다 It's hard to resist chocolate when you're on a diet.
+532. resolve /rɪˈzɑːlv/ 리졸브 해결하다 We need to resolve this conflict quickly.
+533. respond /rɪˈspɑːnd/ 리스폰드 응답하다 How did she respond to your question?
+534. restore /rɪˈstɔːr/ 리스토어 복원하다 They plan to restore the old painting.
+535. restrict /rɪˈstrɪkt/ 리스트릭트 제한하다 The government may restrict water usage during drought.
+536. result /rɪˈzʌlt/ 리절트 초래하다 Overeating can result in weight gain.
+537. retain /rɪˈteɪn/ 리테인 유지하다 Try to retain this information for the exam.
+538. reveal /rɪˈviːl/ 리빌 드러내다 The study reveals interesting patterns.
+539. reverse /rɪˈvɜːrs/ 리버스 뒤집다 Can you reverse the car into the parking space?
+540. review /rɪˈvjuː/ 리뷰 검토하다 We need to review the contract before signing.
+541. revise /rɪˈvaɪz/ 리바이즈 수정하다 You should revise your essay before submitting it.
+542. revive /rɪˈvaɪv/ 리바이브 소생시키다 They're trying to revive the local economy.
+543. risk /rɪsk/ 리스크 위험을 무릅쓰다 Don't risk your life for material possessions.
+544. satisfy /ˈsæt̬.ɪs.faɪ/ 새티스파이 만족시키다 This solution should satisfy all parties.
+545. save /seɪv/ 세이브 구하다 The lifeguard saved the drowning swimmer.
+546. schedule /ˈsked.juːl/ 스케줄 일정을 잡다 Let's schedule a meeting for next week.
+547. secure /səˈkjʊr/ 시큐어 확보하다 We need to secure funding for the project.
+548. seek /siːk/ 시크 찾다 They're seeking new employees for their company.
+549. select /səˈlekt/ 셀렉트 선택하다 Please select an option from the menu.
+550. sense /sens/ 센스 감지하다 Dogs can sense fear in humans.
+English Pronunciation Korean Translation Examples
+551. separate /ˈsep.ə.reɪt/ 세퍼레이트 분리하다 We need to separate the recyclables from the trash.
+552. serve /sɜːrv/ 서브 제공하다 This restaurant serves Italian cuisine.
+553. set /set/ 셋 설정하다 Let's set a date for our next meeting.
+554. shape /ʃeɪp/ 셰이프 형성하다 Early experiences shape our personalities.
+555. share /ʃer/ 셰어 공유하다 Can you share your ideas with the group?
+556. shift /ʃɪft/ 시프트 이동하다 The company is shifting its focus to online sales.
+557. sign /saɪn/ 사인 서명하다 Please sign the contract at the bottom.
+558. signify /ˈsɪɡ.nə.faɪ/ 시그니파이 의미하다 What does this symbol signify?
+559. simplify /ˈsɪm.plə.faɪ/ 심플리파이 단순화하다 We need to simplify the process.
+560. simulate /ˈsɪm.jə.leɪt/ 시뮬레이트 시뮬레이션하다 The software can simulate real-world conditions.
+561. solve /sɑːlv/ 솔브 해결하다 Let's work together to solve this problem.
+562. sort /sɔːrt/ 소트 분류하다 Can you sort these files alphabetically?
+563. specify /ˈspes.ə.faɪ/ 스페시파이 명시하다 Please specify your requirements in the email.
+564. spend /spend/ 스펜드 소비하다 How do you spend your free time?
+565. split /splɪt/ 스플릿 분할하다 Let's split the cost of dinner.
+566. spread /spred/ 스프레드 퍼뜨리다 The rumor spread quickly through the office.
+567. stabilize /ˈsteɪ.bə.laɪz/ 스테이블라이즈 안정시키다 The doctor is trying to stabilize the patient's condition.
+568. state /steɪt/ 스테이트 진술하다 Can you state your name and address for the record?
+569. stimulate /ˈstɪm.jə.leɪt/ 스티뮬레이트 자극하다 Coffee can stimulate your brain.
+570. strengthen /ˈstreŋ.θən/ 스트렝쓴 강화하다 Regular exercise can strengthen your muscles.
+571. stress /stres/ 스트레스 강조하다 The teacher stressed the importance of daily practice.
+572. structure /ˈstrʌk.tʃər/ 스트럭처 구조화하다 How should we structure the report?
+573. study /ˈstʌd.i/ 스터디 연구하다 Scientists are studying the effects of climate change.
+574. submit /səbˈmɪt/ 서브밋 제출하다 Please submit your application by Friday.
+575. substitute /ˈsʌb.stə.tuːt/ 섭스티튜트 대체하다 Can we substitute olive oil for butter in this recipe?
+576. succeed /səkˈsiːd/ 석시드 성공하다 With hard work, you can succeed in your goals.
+577. suffer /ˈsʌf.ər/ 서퍼 고통받다 Many people suffer from allergies in spring.
+578. suggest /səˈdʒest/ 서제스트 제안하다 Can you suggest a good restaurant nearby?
+579. suit /suːt/ 슈트 적합하다 This job suits your skills perfectly.
+580. summarize /ˈsʌm.ə.raɪz/ 서머라이즈 요약하다 Can you summarize the main points of the meeting?
+581. supply /səˈplaɪ/ 서플라이 공급하다 The company supplies office equipment to businesses.
+582. support /səˈpɔːrt/ 서포트 지원하다 The charity supports homeless people.
+583. suppose /səˈpoʊz/ 서포우즈 가정하다 Suppose we win the lottery, what would we do?
+584. suppress /səˈpres/ 서프레스 억제하다 The government tried to suppress the rebellion.
+585. survive /sərˈvaɪv/ 서바이브 생존하다 How long can a person survive without water?
+586. suspend /səˈspend/ 서스펜드 중단하다 The school decided to suspend classes due to the storm.
+587. sustain /səˈsteɪn/ 서스테인 유지하다 It's important to sustain a healthy lifestyle.
+588. switch /swɪtʃ/ 스위치 전환하다 Let's switch to a different topic.
+589. symbolize /ˈsɪm.bə.laɪz/ 심볼라이즈 상징하다 The dove symbolizes peace.
+590. tackle /ˈtæk.əl/ 태클 다루다 We need to tackle this problem head-on.
+591. target /ˈtɑːr.ɡət/ 타겟 목표로 삼다 Our marketing campaign targets young adults.
+592. teach /tiːtʃ/ 티치 가르치다 She teaches English at a high school.
+593. tend /tend/ 텐드 경향이 있다 Prices tend to rise during the holiday season.
+594. terminate /ˈtɜːr.mə.neɪt/ 터미네이트 종료하다 The company decided to terminate his contract.
+595. test /test/ 테스트 시험하다 We need to test the new software before releasing it.
+596. testify /ˈtes.tə.faɪ/ 테스티파이 증언하다 The witness will testify in court tomorrow.
+597. think /θɪŋk/ 싱크 생각하다 What do you think about this idea?
+598. threaten /ˈθret.ən/ 쓰레튼 위협하다 The storm threatens to disrupt air travel.
+599. trace /treɪs/ 트레이스 추적하다 The police are trying to trace the suspect's movements.
+600. train /treɪn/ 트레인 훈련하다 The company will train new employees next month.
+English Pronunciation Korean Translation Examples
+601. transfer /trænsˈfɜːr/ 트랜스퍼 이전하다 I need to transfer money to my savings account.
+602. transform /trænsˈfɔːrm/ 트랜스폼 변형하다 Technology can transform the way we live and work.
+603. translate /trænsˈleɪt/ 트랜슬레이트 번역하다 Can you translate this document into Korean?
+604. transmit /trænzˈmɪt/ 트랜스밋 전송하다 Radio waves transmit signals over long distances.
+605. transport /trænˈspɔːrt/ 트랜스포트 운송하다 The company transports goods by truck and train.
+606. treat /triːt/ 트리트 대우하다 You should treat others with respect.
+607. trigger /ˈtrɪɡ.ər/ 트리거 유발하다 Certain foods can trigger allergic reactions.
+608. trust /trʌst/ 트러스트 신뢰하다 You can trust me to keep your secret.
+609. try /traɪ/ 트라이 시도하다 Let's try to solve this puzzle.
+610. turn /tɜːrn/ 턴 돌리다 Turn left at the next intersection.
+611. unify /ˈjuː.nə.faɪ/ 유니파이 통일하다 The leader hopes to unify the divided country.
+612. update /ʌpˈdeɪt/ 업데이트 갱신하다 Don't forget to update your software regularly.
+613. upgrade /ʌpˈɡreɪd/ 업그레이드 향상시키다 We need to upgrade our computer systems.
+614. uphold /ʌpˈhoʊld/ 업홀드 지지하다 The court upheld the original verdict.
+615. utilize /ˈjuː.t̬əl.aɪz/ 유틸라이즈 활용하다 We should utilize our resources more efficiently.
+616. validate /ˈvæl.ə.deɪt/ 밸리데이트 유효화하다 The experiment validates our theory.
+617. value /ˈvæl.juː/ 밸류 평가하다 How much do you value your free time?
+618. vary /ˈver.i/ 베리 다양화하다 Prices vary depending on the season.
+619. verify /ˈver.ə.faɪ/ 베리파이 확인하다 Please verify your identity before proceeding.
+620. view /vjuː/ 뷰 보다 You can view the city from the top of the tower.
+621. violate /ˈvaɪ.ə.leɪt/ 바이얼레이트 위반하다 Speeding violates traffic laws.
+622. visit /ˈvɪz.ɪt/ 비짓 방문하다 We plan to visit Paris next summer.
+623. visualize /ˈvɪʒ.u.əl.aɪz/ 비주얼라이즈 시각화하다 Try to visualize your goals to help achieve them.
+624. vote /voʊt/ 보우트 투표하다 Every citizen has the right to vote.
+625. waste /weɪst/ 웨이스트 낭비하다 Don't waste your time on unimportant tasks.
+626. weaken /ˈwiː.kən/ 위큰 약화시키다 The scandal weakened the politician's position.
+627. wear /wer/ 웨어 착용하다 Remember to wear your seatbelt while driving.
+628. weigh /weɪ/ 웨이 무게를 재다 Let's weigh the pros and cons before deciding.
+629. welcome /ˈwel.kəm/ 웰컴 환영하다 We welcome new members to our club.
+630. win /wɪn/ 윈 이기다 Our team hopes to win the championship.
+631. withdraw /wɪðˈdrɔː/ 위드드로 철회하다 The candidate decided to withdraw from the race.
+632. withstand /wɪðˈstænd/ 위드스탠드 견디다 The building is designed to withstand earthquakes.
+633. witness /ˈwɪt.nəs/ 위트니스 목격하다 Did anyone witness the accident?
+634. work /wɜːrk/ 워크 일하다 She works as a teacher at a local school.
+635. worry /ˈwɜː.ri/ 워리 걱정하다 Don't worry about things you can't control.
+636. yield /jiːld/ 일드 양보하다 The smaller company yielded to the larger one.
+637. absorb /əbˈzɔːrb/ 업소브 흡수하다 Plants absorb water through their roots.
+638. accelerate /əkˈsel.ə.reɪt/ 액셀러레이트 가속하다 The car began to accelerate on the highway.
+639. access /ˈæk.ses/ 액세스 접근하다 You need a password to access the database.
+640. accommodate /əˈkɑː.mə.deɪt/ 어커모데이트 수용하다 The hotel can accommodate up to 500 guests.
+641. accomplish /əˈkʌm.plɪʃ/ 어컴플리시 성취하다 She accomplished her goal of running a marathon.
+642. account /əˈkaʊnt/ 어카운트 설명하다 How do you account for the discrepancy in the figures?
+643. accumulate /əˈkjuː.mjə.leɪt/ 어큐뮬레이트 축적하다 He has accumulated a lot of experience over the years.
+644. achieve /əˈtʃiːv/ 어치브 달성하다 With hard work, you can achieve your dreams.
+645. acknowledge /əkˈnɑː.lɪdʒ/ 어크날리지 인정하다 We should acknowledge our mistakes and learn from them.
+646. acquire /əˈkwaɪər/ 어콰이어 습득하다 She acquired new skills through training.
+647. adapt /əˈdæpt/ 어댑트 적응하다 Animals must adapt to survive in changing environments.
+648. address /əˈdres/ 어드레스 다루다 The speech addressed several important issues.
+649. adhere /ədˈhɪr/ 어드히어 고수하다 We must adhere to the rules and regulations.
+650. adjust /əˈdʒʌst/ 어저스트 조정하다 You may need to adjust your schedule to fit in the meeting.
+English Pronunciation Korean Translation Examples
+651. administer /ədˈmɪn.ɪ.stər/ 어드미니스터 관리하다 The nurse will administer the medication.
+652. adopt /əˈdɑːpt/ 어답트 채택하다 The company decided to adopt a new policy.
+653. advance /ədˈvæns/ 어드밴스 진보하다 Technology continues to advance rapidly.
+654. advertise /ˈæd.vər.taɪz/ 애드버타이즈 광고하다 We need to advertise our new product.
+655. advise /ədˈvaɪz/ 어드바이즈 조언하다 I advise you to think carefully before making a decision.
+656. advocate /ˈæd.və.keɪt/ 애드버케이트 옹호하다 She advocates for animal rights.
+657. affect /əˈfekt/ 어펙트 영향을 미치다 The new law will affect many small businesses.
+658. affiliate /əˈfɪl.i.eɪt/ 어필리에이트 제휴하다 Our company is affiliated with several charities.
+659. affirm /əˈfɜːrm/ 어펌 확언하다 The court affirmed the lower court's decision.
+660. allocate /ˈæl.ə.keɪt/ 앨로케이트 할당하다 We need to allocate more resources to this project.
+661. alter /ˈɔːl.tər/ 올터 변경하다 The tailor can alter your dress to fit better.
+662. analyze /ˈæn.əl.aɪz/ 애널라이즈 분석하다 We need to analyze the data carefully.
+663. anticipate /ænˈtɪs.ə.peɪt/ 안티시페이트 예상하다 We didn't anticipate such a large crowd.
+664. appeal /əˈpiːl/ 어필 호소하다 His speech appealed to many voters.
+665. appreciate /əˈpriː.ʃi.eɪt/ 어프리시에이트 감사하다 I really appreciate your help.
+666. approach /əˈproʊtʃ/ 어프로치 접근하다 How should we approach this problem?
+667. approve /əˈpruːv/ 어프루브 승인하다 The committee needs to approve the budget.
+668. argue /ˈɑːr.ɡjuː/ 아규 논쟁하다 They often argue about politics.
+669. arise /əˈraɪz/ 어라이즈 발생하다 Problems often arise when you least expect them.
+670. arrange /əˈreɪndʒ/ 어레인지 정리하다 Can you arrange a meeting for next week?
+671. assert /əˈsɜːrt/ 어서트 주장하다 He asserted his innocence throughout the trial.
+672. assess /əˈses/ 어세스 평가하다 We need to assess the damage after the storm.
+673. assign /əˈsaɪn/ 어사인 할당하다 The teacher will assign homework tomorrow.
+674. assist /əˈsɪst/ 어시스트 돕다 Can you assist me with this task?
+675. assume /əˈsuːm/ 어슘 가정하다 Don't assume you know what I'm thinking.
+676. assure /əˈʃʊr/ 어슈어 확신시키다 I can assure you that the product is safe.
+677. attach /əˈtætʃ/ 어태치 첨부하다 Please attach your resume to the email.
+678. attain /əˈteɪn/ 어테인 달성하다 It took years of hard work to attain his goal.
+679. attempt /əˈtempt/ 어템프트 시도하다 He will attempt to break the world record.
+680. attend /əˈtend/ 어텐드 참석하다 Will you attend the conference next week?
+681. attribute /əˈtrɪb.juːt/ 어트리뷰트 귀속시키다 We can attribute our success to teamwork.
+682. authorize /ˈɔː.θər.aɪz/ 오써라이즈 승인하다 Only the manager can authorize this transaction.
+683. avoid /əˈvɔɪd/ 어보이드 피하다 Try to avoid making the same mistake again.
+684. base /beɪs/ 베이스 기반을 두다 The theory is based on scientific evidence.
+685. benefit /ˈben.ə.fɪt/ 베네핏 이익을 얻다 Everyone will benefit from this new policy.
+686. calculate /ˈkæl.kjə.leɪt/ 캘큘레이트 계산하다 Let's calculate the total cost of the project.
+687. capture /ˈkæp.tʃər/ 캡처 포착하다 The photographer managed to capture the perfect moment.
+688. challenge /ˈtʃæl.ɪndʒ/ 챌린지 도전하다 I challenge you to a game of chess.
+689. claim /kleɪm/ 클레임 주장하다 He claims to be an expert in this field.
+690. clarify /ˈkler.ə.faɪ/ 클래리파이 명확히 하다 Can you clarify what you mean by that?
+691. classify /ˈklæs.ə.faɪ/ 클래시파이 분류하다 Scientists classify animals into different species.
+692. collaborate /kəˈlæb.ə.reɪt/ 콜래버레이트 협력하다 Our teams need to collaborate on this project.
+693. collect /kəˈlekt/ 컬렉트 수집하다 He collects rare stamps as a hobby.
+694. combine /kəmˈbaɪn/ 컴바인 결합하다 Let's combine our ideas to create a better solution.
+695. comment /ˈkɑː.ment/ 코멘트 논평하다 Would you like to comment on the recent developments?
+696. commit /kəˈmɪt/ 커밋 전념하다 We need to commit to this project fully.
+697. communicate /kəˈmjuː.nə.keɪt/ 커뮤니케이트 의사소통하다 It's important to communicate clearly with your team.
+698. compare /kəmˈper/ 컴페어 비교하다 Let's compare the two products before making a decision.
+699. compete /kəmˈpiːt/ 컴피트 경쟁하다 Many athletes compete in the Olympic Games.
+700. compile /kəmˈpaɪl/ 컴파일 편집하다 We need to compile all the data into a report.
+English Pronunciation Korean Translation Examples
+701. complement /ˈkɑːm.plə.ment/ 컴플리먼트 보완하다 The wine complements the meal perfectly.
+702. complete /kəmˈpliːt/ 컴플리트 완료하다 I need to complete this assignment by tomorrow.
+703. comply /kəmˈplaɪ/ 컴플라이 준수하다 All employees must comply with safety regulations.
+704. compose /kəmˈpoʊz/ 컴포즈 구성하다 Mozart composed many beautiful symphonies.
+705. comprehend /ˌkɑːm.prəˈhend/ 컴프리헨드 이해하다 It's difficult to comprehend the complexity of the universe.
+706. comprise /kəmˈpraɪz/ 컴프라이즈 구성하다 The committee comprises ten members.
+707. compute /kəmˈpjuːt/ 컴퓨트 계산하다 The software can compute complex equations quickly.
+708. concentrate /ˈkɑːn.sən.treɪt/ 컨센트레이트 집중하다 It's hard to concentrate with all this noise.
+709. concern /kənˈsɜːrn/ 컨선 우려하다 The pollution levels concern many environmentalists.
+710. conclude /kənˈkluːd/ 컨클루드 결론 짓다 We can conclude that the experiment was successful.
+711. conduct /kənˈdʌkt/ 컨덕트 수행하다 The scientist will conduct a series of experiments.
+712. confer /kənˈfɜːr/ 컨퍼 협의하다 The managers will confer about the new policy.
+713. confine /kənˈfaɪn/ 컨파인 제한하다 The zoo tries to confine animals in natural habitats.
+714. confirm /kənˈfɜːrm/ 컨펌 확인하다 Please confirm your reservation by email.
+715. confront /kənˈfrʌnt/ 컨프런트 직면하다 We must confront these issues head-on.
+716. connect /kəˈnekt/ 커넥트 연결하다 This cable connects the printer to the computer.
+717. consent /kənˈsent/ 컨센트 동의하다 Both parties must consent to the agreement.
+718. conserve /kənˈsɜːrv/ 컨서브 보존하다 We must conserve our natural resources.
+719. consider /kənˈsɪd.ər/ 컨시더 고려하다 Please consider my proposal carefully.
+720. consist /kənˈsɪst/ 컨시스트 구성되다 The team consists of five members.
+721. constitute /ˈkɑːn.stə.tuːt/ 컨스티튜트 구성하다 These rules constitute our code of conduct.
+722. constrain /kənˈstreɪn/ 컨스트레인 제약하다 Budget cuts may constrain our plans.
+723. construct /kənˈstrʌkt/ 컨스트럭트 건설하다 They plan to construct a new shopping mall.
+724. consult /kənˈsʌlt/ 컨설트 상담하다 You should consult a doctor about that pain.
+725. consume /kənˈsuːm/ 컨슘 소비하다 Americans consume a lot of fast food.
+726. contain /kənˈteɪn/ 컨테인 포함하다 This box contains important documents.
+727. contemplate /ˈkɑːn.təm.pleɪt/ 컨템플레이트 숙고하다 He's contemplating a career change.
+728. contend /kənˈtend/ 컨텐드 주장하다 She contends that the policy is unfair.
+729. continue /kənˈtɪn.juː/ 컨티뉴 계속하다 Despite the difficulties, we must continue our efforts.
+730. contract /kənˈtrækt/ 컨트랙트 계약하다 The company contracted to build the bridge.
+731. contradict /ˌkɑːn.trəˈdɪkt/ 컨트라딕트 모순되다 His actions contradict his words.
+732. contribute /kənˈtrɪb.juːt/ 컨트리뷰트 기여하다 Everyone should contribute to the project.
+733. control /kənˈtroʊl/ 컨트롤 통제하다 The pilot must control the aircraft at all times.
+734. convert /kənˈvɜːrt/ 컨버트 전환하다 We need to convert the file to PDF format.
+735. convey /kənˈveɪ/ 컨베이 전달하다 Please convey my thanks to the team.
+736. convince /kənˈvɪns/ 컨빈스 설득하다 Can you convince him to change his mind?
+737. cooperate /koʊˈɑː.pə.reɪt/ 코오퍼레이트 협력하다 We must cooperate to solve this problem.
+738. coordinate /koʊˈɔːr.də.neɪt/ 코오디네이트 조정하다 Someone needs to coordinate the event.
+739. correct /kəˈrekt/ 커렉트 수정하다 Please correct any mistakes in the document.
+740. correspond /ˌkɔːr.əˈspɑːnd/ 코레스폰드 일치하다 Does your experience correspond to the job requirements?
+741. create /kriˈeɪt/ 크리에이트 창조하다 The artist will create a new sculpture for the park.
+742. criticize /ˈkrɪt̬.ə.saɪz/ 크리티사이즈 비판하다 It's easy to criticize others' work.
+743. cultivate /ˈkʌl.tə.veɪt/ 컬티베이트 경작하다 Farmers cultivate various crops in this region.
+744. debate /dɪˈbeɪt/ 디베이트 토론하다 The candidates will debate on TV tonight.
+745. decide /dɪˈsaɪd/ 디사이드 결정하다 We need to decide on a plan of action.
+746. declare /dɪˈkler/ 디클레어 선언하다 The country declared its independence.
+747. decline /dɪˈklaɪn/ 디클라인 거절하다 He politely declined the invitation.
+748. decrease /dɪˈkriːs/ 디크리스 감소하다 The company's profits have decreased this year.
+749. dedicate /ˈded.ə.keɪt/ 데디케이트 헌신하다 She dedicated her life to helping others.
+750. define /dɪˈfaɪn/ 디파인 정의하다 Can you define the term "democracy"?
+English Pronunciation Korean Translation Examples
+751. delay /dɪˈleɪ/ 딜레이 지연하다 Bad weather delayed our flight.
+752. delegate /ˈdel.ə.ɡeɪt/ 델리게이트 위임하다 Managers should learn to delegate tasks.
+753. delete /dɪˈliːt/ 딜리트 삭제하다 Remember to delete old files from your computer.
+754. deliberate /dɪˈlɪb.ər.ət/ 딜리버레이트 심사숙고하다 The jury deliberated for hours before reaching a verdict.
+755. deliver /dɪˈlɪv.ər/ 딜리버 배달하다 The package should be delivered tomorrow.
+756. demonstrate /ˈdem.ən.streɪt/ 데먼스트레이트 증명하다 The experiment demonstrates how plants grow.
+757. deny /dɪˈnaɪ/ 디나이 부인하다 He denied all accusations of wrongdoing.
+758. depend /dɪˈpend/ 디펜드 의존하다 Don't depend too much on others.
+759. depict /dɪˈpɪkt/ 디픽트 묘사하다 The painting depicts a rural landscape.
+760. derive /dɪˈraɪv/ 디라이브 유래하다 Many English words derive from Latin.
+761. describe /dɪˈskraɪb/ 디스크라이브 설명하다 Can you describe what you saw?
+762. design /dɪˈzaɪn/ 디자인 설계하다 The architect will design the new building.
+763. designate /ˈdez.ɪɡ.neɪt/ 데지그네이트 지정하다 The boss designated him as the new team leader.
+764. detect /dɪˈtekt/ 디텍트 감지하다 The security system can detect any intruders.
+765. determine /dɪˈtɜːr.mɪn/ 디터민 결정하다 We need to determine the cause of the problem.
+766. develop /dɪˈvel.əp/ 디벨럽 개발하다 The company is developing a new product.
+767. devote /dɪˈvoʊt/ 디보트 전념하다 She devotes most of her time to studying.
+768. diagnose /ˈdaɪ.əɡ.noʊs/ 다이어그노스 진단하다 The doctor will diagnose the patient's condition.
+769. differ /ˈdɪf.ər/ 디퍼 다르다 Our opinions differ on this matter.
+770. differentiate /ˌdɪf.əˈren.ʃi.eɪt/ 디퍼렌시에이트 구별하다 It's important to differentiate between facts and opinions.
+771. diminish /dɪˈmɪn.ɪʃ/ 디미니시 감소하다 The pain gradually diminished over time.
+772. direct /dəˈrekt/ 디렉트 지시하다 The manager will direct the new project.
+773. disappear /ˌdɪs.əˈpɪr/ 디서피어 사라지다 The magician made the rabbit disappear.
+774. discover /dɪˈskʌv.ər/ 디스커버 발견하다 Scientists discover new species every year.
+775. discuss /dɪˈskʌs/ 디스커스 토론하다 Let's discuss this issue in the meeting.
+776. display /dɪˈspleɪ/ 디스플레이 전시하다 The museum will display the new artifacts next month.
+777. dispose /dɪˈspoʊz/ 디스포즈 처분하다 Please dispose of your trash properly.
+778. distinguish /dɪˈstɪŋ.ɡwɪʃ/ 디스팅귀시 구별하다 Can you distinguish between these two shades of blue?
+779. distribute /dɪˈstrɪb.juːt/ 디스트리뷰트 분배하다 The charity will distribute food to the homeless.
+780. disturb /dɪˈstɜːrb/ 디스터브 방해하다 Please don't disturb me while I'm working.
+781. divide /dɪˈvaɪd/ 디바이드 나누다 We need to divide the work among team members.
+782. document /ˈdɑːk.jə.ment/ 다큐먼트 문서화하다 Make sure to document all your expenses.
+783. dominate /ˈdɑː.mə.neɪt/ 도미네이트 지배하다 The company dominates the smartphone market.
+784. draft /dræft/ 드래프트 초안을 작성하다 Let's draft a proposal for the new project.
+785. draw /drɔː/ 드로 그리다 The artist will draw a portrait of the model.
+786. drive /draɪv/ 드라이브 운전하다 Be careful when you drive in bad weather.
+787. earn /ɜːrn/ 언 벌다 How much do you earn per month?
+788. edit /ˈed.ɪt/ 에딧 편집하다 We need to edit the video before publishing it.
+789. educate /ˈed.jʊ.keɪt/ 에듀케이트 교육하다 Parents and teachers work together to educate children.
+790. effect /ɪˈfekt/ 이펙트 영향을 미치다 The new law will effect changes in our daily lives.
+791. elaborate /ɪˈlæb.ə.reɪt/ 일래버레이트 정교하게 하다 Can you elaborate on your proposal?
+792. elect /ɪˈlekt/ 일렉트 선출하다 The people will elect a new president next year.
+793. eliminate /ɪˈlɪm.ə.neɪt/ 일리미네이트 제거하다 We need to eliminate unnecessary expenses.
+794. emphasize /ˈem.fə.saɪz/ 엠퍼사이즈 강조하다 The teacher emphasized the importance of practice.
+795. employ /ɪmˈplɔɪ/ 엠플로이 고용하다 The company plans to employ 100 new workers.
+796. enable /ɪˈneɪ.bəl/ 인에이블 가능하게 하다 This software will enable us to work more efficiently.
+797. encounter /ɪnˈkaʊn.tər/ 인카운터 마주치다 We may encounter some problems along the way.
+798. encourage /ɪnˈkɜː.rɪdʒ/ 인커리지 격려하다 Parents should encourage their children to read.
+799. engage /ɪnˈɡeɪdʒ/ 인게이지 참여하다 Try to engage your audience during the presentation.
+800. enhance /ɪnˈhæns/ 인핸스 향상시키다 This software will enhance your productivity.
+
+
+...`; // 여기에 전체 파일 내용이 들어갑니다.
+
+        const lines = fileContent.split('\n').slice(1); // 헤더 제거
+        lines.forEach(line => {
+            const parts = line.split(' ');
+            if (parts.length >= 5) {
+                const word = parts[1];
+                const pronunciation = parts[2];
+                const translation = parts[4];
+                const example = parts.slice(5).join(' ');
+                words.push({ word, pronunciation, translation, examples: [example] });
+            }
+        });
+
+        let startIndex = 0;
+
+        function displayWords() {
+            const wordsDisplay = document.getElementById('words-display');
+            wordsDisplay.innerHTML = words.slice(startIndex, startIndex + 5).map((word, index) => `
+                <div class="word-container">
+                    <input type="checkbox" class="checkbox" id="checkbox-${startIndex + index}">
+                    <span class="word-text" onclick="togglePopup(${startIndex + index})">${word.word}</span>
+                    <button class="speaker-button" onclick="playPronunciation(${startIndex + index})">🔊</button>
+                </div>
+            `).join('');
+            updateButtons();
+        }
+
+        function playPronunciation(index) {
+            const utterance = new SpeechSynthesisUtterance(words[index].word);
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+            setTimeout(() => {
+                speechSynthesis.speak(utterance);
+            }, 1000);
+        }
+
+        function togglePopup(index) {
+            const popup = document.getElementById('popup');
+            if (popup.style.display === 'none' || popup.style.display === '') {
+                const word = words[index];
+                popup.innerHTML = `
+                    <h2>${word.word} [${word.pronunciation}]</h2>
+                    <p><strong>의미:</strong> ${word.translation}</p>
+                    <p><strong>예문:</strong></p>
+                    <ul>
+                        ${word.examples.map(example => `<li>${example}</li>`).join('')}
+                    </ul>
+                `;
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
+        }
+
+        function changeWord(direction) {
+            startIndex = Math.max(0, Math.min(startIndex + direction, words.length - 5));
+            displayWords();
+        }
+
+        function deleteSelectedWords() {
+            const selectedIndices = [];
+            for (let i = startIndex; i < startIndex + 5 && i < words.length; i++) {
+                if (document.getElementById(`checkbox-${i}`).checked) {
+                    selectedIndices.push(i);
+                }
+            }
+            
+            if (selectedIndices.length > 0) {
+                for (let i = selectedIndices.length - 1; i >= 0; i--) {
+                    words.splice(selectedIndices[i], 1);
+                }
+                
+                if (startIndex + 5 > words.length && startIndex > 0) {
+                    startIndex = Math.max(0, words.length - 5);
+                }
+                displayWords();
+            }
+        }
+
+        function updateButtons() {
+            document.getElementById('prevButton').disabled = startIndex === 0;
+            document.getElementById('nextButton').disabled = startIndex + 5 >= words.length;
+            document.getElementById('deleteButton').disabled = words.length === 0;
+        }
+
+        displayWords();
+    </script>
+</body>
+</html>
