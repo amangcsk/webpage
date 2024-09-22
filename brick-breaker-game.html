@@ -15,20 +15,45 @@
         button {
             margin: 5px;
             padding: 5px 10px;
+            background-color: #0095DD;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #007bb8;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #controlButtons {
+            margin-top: 10px;
+        }
+        #leftButton, #rightButton {
+            width: 80px;
+            height: 40px;
+            font-size: 20px;
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <header>
-            <h1>단어 공부</h1>
+            <h1>벽돌 부시기</h1>
             <nav>
-                <ul>
-                    <li><a href="index.html">홈으로</a></li>
-                </ul>
+            <ul><a href="index.html">Home</a></ul>
             </nav>
         </header>
-        <canvas id="gameCanvas" width="480" height="500"></canvas>
+         
+        <canvas id="gameCanvas" width="360" height="400"></canvas>
+        <div id="controlButtons">
+            <button id="leftButton">←</button>
+            <button id="rightButton">→</button>
+        </div>
         <div>
             <button id="startButton">시작</button>
             <button id="pauseButton">일시정지</button>
@@ -36,10 +61,11 @@
             <button id="decreaseSpeedButton">속도 감소</button>
             <button id="increaseSpeedButton">속도 증가</button>
         </div>
+        
         <div id="score">점수: 0</div>
         <div id="level">레벨: 1</div>
         <div id="highScore">최고 점수: 0</div>
-        <div id="ballSpeed">공 속도: 0.14</div>
+        <div id="ballSpeed">공 속도: 0.5</div>
     </div>
 
     <script>
@@ -48,28 +74,29 @@
 
         let ball, paddle, bricks, score, level, highScore, gameRunning;
         const brickRowCount = 5;
-        const brickColumnCount = 8;
-        const brickWidth = 50;
-        const brickHeight = 15;
+        const brickColumnCount = 7;
+        const brickWidth = 38
+        const brickHeight = 10;
         const brickPadding = 5;
         const brickOffsetTop = 30;
-        const brickOffsetLeft = 30;
+        const brickOffsetLeft = 35;
+        const brickOffsetright = 35;
 
         function initGame() {
             ball = {
                 x: canvas.width / 2,
                 y: canvas.height - 30,
-                dx: 0.14,
-                dy: -0.14,
+                dx: 0.5,
+                dy: -0.5,
                 radius: 8,
-                speed: 0.14
+                speed: 0.5
             };
 
             paddle = {
-                width: 60, // 75의 80%인 60으로 변경
+                width: 60,
                 height: 10,
                 x: (canvas.width - 60) / 2,
-                speed: 2 // 4의 50%인 2로 변경
+                speed: 2
             };
 
             bricks = [];
@@ -141,7 +168,6 @@
                                 level++;
                                 updateLevel();
                                 initBricks();
-                                // 레벨이 올라갈 때마다 공의 속도를 약간 증가
                                 changeBallSpeed(1.05);
                             }
                         }
@@ -277,6 +303,56 @@
                 leftPressed = false;
             }
         }
+
+        // New functions for button controls
+        function moveLeft() {
+            if (paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
+        }
+
+        function moveRight() {
+            if (paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            }
+        }
+
+        // Event listeners for control buttons
+        document.getElementById('leftButton').addEventListener('mousedown', function() {
+            leftPressed = true;
+        });
+
+        document.getElementById('leftButton').addEventListener('mouseup', function() {
+            leftPressed = false;
+        });
+
+        document.getElementById('leftButton').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            leftPressed = true;
+        });
+
+        document.getElementById('leftButton').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            leftPressed = false;
+        });
+
+        document.getElementById('rightButton').addEventListener('mousedown', function() {
+            rightPressed = true;
+        });
+
+        document.getElementById('rightButton').addEventListener('mouseup', function() {
+            rightPressed = false;
+        });
+
+        document.getElementById('rightButton').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            rightPressed = true;
+        });
+
+        document.getElementById('rightButton').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            rightPressed = false;
+        });
 
         initGame();
         draw();

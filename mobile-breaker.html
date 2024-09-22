@@ -1,234 +1,128 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>모바일 벽돌깨기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>개선된 벽돌깨기 게임</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            touch-action: none;
+        #gameContainer {
+            text-align: center;
             font-family: Arial, sans-serif;
         }
-
-        #gameContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 350px;
+        canvas {
+            border: 1px solid black;
         }
-
-        #gameCanvas {
-            border: 2px solid #000;
-            background-color: #fff;
-        }
-
-        #header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-            gap: 20px;
-        }
-
-        #score {
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #0095DD;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             font-size: 16px;
         }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            margin-top: 5px;
+        button:hover {
+            background-color: #007bb8;
         }
-
-        button {
-            font-size: 14px;
-            padding: 6px 10px;
-            margin: 0 2px;
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
-
-        #moveButtons {
-            display: flex;
-            justify-content: center;
-            gap: 1px;
-            margin-top: 5px;
+        #controlButtons {
+            margin-top: 10px;
+        }
+        #leftButton, #rightButton {
+            width: 80px;
+            height: 40px;
+            font-size: 20px;
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h2>Mobile Breaker</h2>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-            </ul>
-        </nav>
-    </header>
     <div id="gameContainer">
-        <div id="scoreBox">점수: <span id="score">0</span></div>
-           
-            <canvas id="gameCanvas"></canvas>
-        <div class="button-container">
-            <button id="startButton">시작</button>
-            <button id="pauseButton" disabled>일시정지</button>
-            <button id="restartButton" disabled>재시작</button>
-        </div>
-        <div id="moveButtons">
+        <header>
+            <h1>벽돌 부시기</h1>
+            <nav>
+            <ul><a href="index.html">Home</a></ul>
+            </nav>
+        </header>
+         
+        <canvas id="gameCanvas" width="360" height="400"></canvas>
+        <div id="controlButtons">
             <button id="leftButton">←</button>
             <button id="rightButton">→</button>
         </div>
+        <div>
+            <button id="startButton">시작</button>
+            <button id="pauseButton">일시정지</button>
+            <button id="restartButton">재시작</button>
+            <button id="decreaseSpeedButton">속도 감소</button>
+            <button id="increaseSpeedButton">속도 증가</button>
+        </div>
+        
+        <div id="score">점수: 0</div>
+        <div id="level">레벨: 1</div>
+        <div id="highScore">최고 점수: 0</div>
+        <div id="ballSpeed">공 속도: 0.5</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const startButton = document.getElementById('startButton');
-        const pauseButton = document.getElementById('pauseButton');
-        const restartButton = document.getElementById('restartButton');
-        const leftButton = document.getElementById('leftButton');
-        const rightButton = document.getElementById('rightButton');
-        const scoreElement = document.getElementById('score');
 
-        // 캔버스 크기 설정
-        const containerWidth = Math.min(window.innerWidth - 20, 350);
-        canvas.width = containerWidth * 0.8;
-        canvas.height = window.innerHeight * 0.6;
-            
-        // 게임 변수
-        let ballRadius = 6;
-        let x = canvas.width / 2;
-        let y = canvas.height - 30;
-        let dx = 1; // 2에서 1로 변경
-        let dy = -1; // -2에서 -1로 변경
-        let paddleHeight = 10;
-        let paddleWidth = canvas.width * 0.15; // 패들 크기 줄이기
-        let paddleX = (canvas.width - paddleWidth) / 2;
+        let ball, paddle, bricks, score, level, highScore, gameRunning;
+        const brickRowCount = 5;
+        const brickColumnCount = 7;
+        const brickWidth = 38
+        const brickHeight = 10;
+        const brickPadding = 5;
+        const brickOffsetTop = 30;
+        const brickOffsetLeft = 35;
+        const brickOffsetright = 35;
 
-        // 벽돌 설정 (세로 6개, 가로 8개)
-        let brickRowCount = 6;
-        let brickColumnCount = 8;
-        let brickWidth = (canvas.width - 50) / brickColumnCount;
-        let brickHeight = 15;
-        let brickPadding = 5;
-        let brickOffsetTop = 30;
-        let brickOffsetLeft = (canvas.width - ((brickWidth + brickPadding) * brickColumnCount - brickPadding)) / 2;
+        function initGame() {
+            ball = {
+                x: canvas.width / 2,
+                y: canvas.height - 30,
+                dx: 0.5,
+                dy: -0.5,
+                radius: 8,
+                speed: 0.5
+            };
 
-        let score = 0;
-        let lives = 3;
-        let gameRunning = false;
-        let gamePaused = false;
-        let ballLaunched = false;
+            paddle = {
+                width: 60,
+                height: 10,
+                x: (canvas.width - 60) / 2,
+                speed: 2
+            };
 
-        // 벽돌 생성
-        let bricks = [];
-        for (let c = 0; c < brickColumnCount; c++) {
-            bricks[c] = [];
-            for (let r = 0; r < brickRowCount; r++) {
-                bricks[c][r] = {x: 0, y: 0, status: 1};
-            }
-        }
-
-        // 이벤트 리스너 설정
-        startButton.addEventListener("click", startGame);
-        pauseButton.addEventListener("click", pauseGame);
-        restartButton.addEventListener("click", restartGame);
-        leftButton.addEventListener("mousedown", moveLeft);
-        leftButton.addEventListener("mouseup", stopMoving);
-        leftButton.addEventListener("touchstart", moveLeft);
-        leftButton.addEventListener("touchend", stopMoving);
-        rightButton.addEventListener("mousedown", moveRight);
-        rightButton.addEventListener("mouseup", stopMoving);
-        rightButton.addEventListener("touchstart", moveRight);
-        rightButton.addEventListener("touchend", stopMoving);
-
-        let paddleInterval;
-
-        function moveLeft() {
-            clearInterval(paddleInterval);
-            paddleInterval = setInterval(() => {
-                if (paddleX > 0) {
-                    paddleX -= 7;
-                }
-            }, 20);
-        }
-
-        function moveRight() {
-            clearInterval(paddleInterval);
-            paddleInterval = setInterval(() => {
-                if (paddleX < canvas.width - paddleWidth) {
-                    paddleX += 7;
-                }
-            }, 20);
-        }
-
-        function stopMoving() {
-            clearInterval(paddleInterval);
-        }
-
-        function startGame() {
-            if (!gameRunning) {
-                gameRunning = true;
-                gamePaused = false;
-                startButton.disabled = true;
-                pauseButton.disabled = false;
-                restartButton.disabled = false;
-                // 게임 시작 시 공의 초기 위치 설정
-                x = canvas.width / 2;
-                y = canvas.height - 30;
-                dx = 1; // 2에서 1로 변경
-                dy = -1; // -2에서 -1로 변경
-                draw();
-            }
-        }
-
-        function pauseGame() {
-            if (gameRunning) {
-                gamePaused = !gamePaused;
-                pauseButton.textContent = gamePaused ? "재개" : "일시정지";
-                if (!gamePaused) {
-                    draw();
-                }
-            }
-        }
-
-        function restartGame() {
-            document.location.reload();
-        }
-
-        function collisionDetection() {
+            bricks = [];
             for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
                 for (let r = 0; r < brickRowCount; r++) {
-                    let b = bricks[c][r];
-                    if (b.status == 1) {
-                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
-                            dy = -dy;
-                            b.status = 0;
-                            score++;
-                            scoreElement.textContent = "점수: " + score;
-                            if (score == brickRowCount * brickColumnCount) {
-                                alert("축하합니다! 승리했습니다!");
-                                document.location.reload();
-                            }
-                        }
-                    }
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
                 }
             }
+
+            score = 0;
+            level = 1;
+            if (typeof highScore === 'undefined') {
+                highScore = 0;
+            }
+            gameRunning = false;
+
+            updateScore();
+            updateLevel();
+            updateHighScore();
+            updateBallSpeed();
         }
 
         function drawBall() {
             ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
             ctx.closePath();
@@ -236,7 +130,7 @@
 
         function drawPaddle() {
             ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.rect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
             ctx.closePath();
@@ -260,33 +154,76 @@
             }
         }
 
-        function draw() {
-            if (gamePaused) return;
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if (b.status == 1) {
+                        if (ball.x > b.x && ball.x < b.x + brickWidth && ball.y > b.y && ball.y < b.y + brickHeight) {
+                            ball.dy = -ball.dy;
+                            b.status = 0;
+                            score++;
+                            updateScore();
+                            if (score == brickRowCount * brickColumnCount) {
+                                level++;
+                                updateLevel();
+                                initBricks();
+                                changeBallSpeed(1.05);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
+        function updateScore() {
+            document.getElementById("score").innerHTML = "점수: " + score;
+        }
+
+        function updateLevel() {
+            document.getElementById("level").innerHTML = "레벨: " + level;
+        }
+
+        function updateHighScore() {
+            if (score > highScore) {
+                highScore = score;
+            }
+            document.getElementById("highScore").innerHTML = "최고 점수: " + highScore;
+        }
+
+        function updateBallSpeed() {
+            document.getElementById("ballSpeed").innerHTML = "공 속도: " + ball.speed.toFixed(2);
+        }
+
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
-            drawPaddle();
             drawBall();
+            drawPaddle();
             collisionDetection();
 
-            // 공의 움직임
-            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
+            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                ball.dx = -ball.dx;
             }
-            if (y + dy < ballRadius) {
-                dy = -dy;
-            } else if (y + dy > canvas.height - ballRadius) {
-                if (x > paddleX && x < paddleX + paddleWidth) {
-                    dy = -dy;
+            if (ball.y + ball.dy < ball.radius) {
+                ball.dy = -ball.dy;
+            } else if (ball.y + ball.dy > canvas.height - ball.radius) {
+                if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    ball.dy = -ball.dy;
                 } else {
-                    // 공이 패들에 맞지 않으면 즉시 게임 종료
                     gameOver();
                     return;
                 }
             }
 
-            x += dx;
-            y += dy;
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (rightPressed && paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            } else if (leftPressed && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
 
             if (gameRunning) {
                 requestAnimationFrame(draw);
@@ -295,20 +232,130 @@
 
         function gameOver() {
             gameRunning = false;
+            updateHighScore();
             alert("게임 오버");
-            document.location.reload();
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('restartButton').disabled = false;
         }
 
-        // 공 발사 기능 제거
-        // canvas.addEventListener('click', launchBall);
-        // function launchBall() { ... } 제거
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                document.getElementById('startButton').disabled = true;
+                document.getElementById('restartButton').disabled = true;
+                draw();
+            }
+        }
 
-        // 초기 화면 그리기
-        drawBricks();
-        drawBall();
-        drawPaddle();
-        drawLives();
+        function pauseGame() {
+            gameRunning = false;
+            document.getElementById('startButton').disabled = false;
+        }
+
+        function restartGame() {
+            initGame();
+            startGame();
+        }
+
+        function changeBallSpeed(factor) {
+            ball.speed *= factor;
+            ball.dx = (ball.dx / Math.abs(ball.dx)) * ball.speed;
+            ball.dy = (ball.dy / Math.abs(ball.dy)) * ball.speed;
+            updateBallSpeed();
+        }
+
+        function decreaseSpeed() {
+            if (ball.speed > 0.05) {
+                changeBallSpeed(0.9);
+            }
+        }
+
+        function increaseSpeed() {
+            if (ball.speed < 1) {
+                changeBallSpeed(1.1);
+            }
+        }
+
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('pauseButton').addEventListener('click', pauseGame);
+        document.getElementById('restartButton').addEventListener('click', restartGame);
+        document.getElementById('decreaseSpeedButton').addEventListener('click', decreaseSpeed);
+        document.getElementById('increaseSpeedButton').addEventListener('click', increaseSpeed);
+
+        let rightPressed = false;
+        let leftPressed = false;
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        function keyDownHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = true;
+            } else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = false;
+            } else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        // New functions for button controls
+        function moveLeft() {
+            if (paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
+        }
+
+        function moveRight() {
+            if (paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            }
+        }
+
+        // Event listeners for control buttons
+        document.getElementById('leftButton').addEventListener('mousedown', function() {
+            leftPressed = true;
+        });
+
+        document.getElementById('leftButton').addEventListener('mouseup', function() {
+            leftPressed = false;
+        });
+
+        document.getElementById('leftButton').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            leftPressed = true;
+        });
+
+        document.getElementById('leftButton').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            leftPressed = false;
+        });
+
+        document.getElementById('rightButton').addEventListener('mousedown', function() {
+            rightPressed = true;
+        });
+
+        document.getElementById('rightButton').addEventListener('mouseup', function() {
+            rightPressed = false;
+        });
+
+        document.getElementById('rightButton').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            rightPressed = true;
+        });
+
+        document.getElementById('rightButton').addEventListener('touchend', function(e) {
+            e.preventDefault();
+            rightPressed = false;
+        });
+
+        initGame();
+        draw();
     </script>
 </body>
-
 </html>
