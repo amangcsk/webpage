@@ -3,61 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>랜딩페이지</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>재미있는 놀이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-     <style>
-        h1 {
-          font-size: 32px; /* Change this value to increase or decrease the size */
-        }
-
-        h2 {
-          font-size: 26px; /* Change this value to increase or decrease the size */
-        }
-      </style>
-    <header>
-        <h1>Oldmen' Playground</h1>
-        <nav>
-            <ul>
-                <li><a href="#about">Intro</a></li><br>
-                <li><a href="#services">Services</a></li><br>
-                <li><a href="#contact">연락처</a></li><br>
-
-                <li><a href="mobile-tetris.html">모바일 테트리스</a></li><br>
-                 <li><a href="tetris.html">페이지 테트리스</a></li><br>
-                <li><a href="brick-breaker-game.html">벽돌 깨기 게임</a></li><br>
-                <li><a href="mobile-breaker.html">모바일 벽돌깨기</a></li><br>
-                <li><a href="word-study.html">단어 공부</a></li><br>
-                 <!-- 추가된 링크 -->
-            </ul>
-        </nav>
+<body class="bg-gray-100 font-sans">
+    <header class="bg-yellow-500 text-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">재미있는 놀이터</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="#" class="hover:text-white">Home</a></li>
+                    <li><a href="register.html" class="hover:text-white">Classes</a></li>
+                    <li><a href="imgview.html" class="hover:text-white">Portfolio</a></li>
+                    <li><a href="#" class="hover:text-white">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
     </header>
 
-    
-    <section id="about">
-        <h2>Intro</h2>
-        <p>이곳은 랜딩페이지의 소개 섹션입니다.</p>
-    </section>
+    <main class="container mx-auto mt-8 px-4">
+        <!-- Fun Science Section -->
+        <section class="mb-12">
+            <div class="w-full mb-4">
+                <h2 class="text-3xl font-bold mb-4">내가 있는 바로 그곳을 놀이터로 바꿔보세요!</h2>
+                <h3 class="mb-4 text-blue-600 font-sans text-xl">옛날 게임으로 일상적인 재미를 알아보세요.</h3>
+            </div>
+            <div class="flex flex-wrap justify-start gap-4">
+                <a href="#" class="bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">모바일 테트리스</a>
+                <a href="#" class="bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">페이지 테트리스</a>
+                <a href="#" class="bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">벽돌 깨기</a>
+                <a href="#" class="bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">모바일 벽돌깨기</a>
+            </div>
+        </section>
 
-    
-    <section id="services">
-        <h2>Services</h2>
-        <p>이곳은 랜딩페이지의 서비스 섹션입니다.</p>
-    </section>
+        <!-- Learn to enjoy every minute -->
+        <section class="mb-12 bg-white p-6 rounded shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">매 순간을 즐기면서 참는 법 배우기</h2>
+            <h3 class="mb-4 text-blue-600 font-sans text-xl">호기심 많은 사람들을 위한 지루한 공부에도 참여하세요.</h3>
+            <a href="#" class="mt-4 bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">지루한영어공부</a>
+        </section>
 
-    
-    <section id="contact">
-        <h2>연락처</h2>
-        <form id="contact-form">
-            <label for="name">이름:</label>
-            <input type="text" id="name" name="name" required>
-            <label for="email">이메일:</label>
-            <input type="email" id="email" name="email" required>
-            <button type="submit">제출</button>
-        </form>
-    </section>
+        <!-- Meet Our Teachers & Staff -->
+        <section class="mb-12 flex flex-wrap items-center">
+            <div class="w-full md:w-1/2 pr-4">
+                <h2 class="text-3xl font-bold mb-4">자주 오는 사람들</h2>
+                <p>경험이 풍부한 어른들은 어린 아이들에게 경험, 재미를 주는 데 열정을 쏟고 있습니다.</p>
+                <a href="register.html" class="mt-4 bg-yellow-500 text-gray-800 px-4 py-2 rounded inline-block">오는 사람들</a>
+            </div>
+            <div class="w-full md:w-1/2 mt-4 md:mt-0">
+                <img src="https://picsum.photos/640/480" alt="Our Staff" class="rounded shadow-lg">
+            </div>
+        </section>
 
-    <script src="scripts.js"></script>
+        <!-- Online classes -->
+        <section class="mb-12 bg-yellow-500 p-6 rounded shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">놀이터 참여 사람들</h2>
+            <p>호기심을 자극하고 과학에 대한 사랑을 키우기 위해 설계된 대화형 수업에 참여하세요.</p>
+            <a href="register.html" class="mt-4 bg-gray-800 text-yellow-500 px-4 py-2 rounded inline-block">지금 등록하기</a>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2023 재미있는 놀이터. All rights reserved.</p>
+        </div>
+    </footer>
 </body>
 </html>
