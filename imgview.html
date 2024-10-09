@@ -128,16 +128,25 @@
 
         function renderThumbnails() {
             thumbnailGrid.innerHTML = '';
-            for (let i = 0; i < 15; i++) {
-                const file = storedImages.find(f => f.id === i);
+            const totalSlots = 15; // 총 슬롯 수
+            const randomImageCount = totalSlots - storedImages.length; // 무작위 이미지 수
+
+            // 저장된 이미지 표시
+            storedImages.forEach((file, index) => {
                 const thumbnail = document.createElement('div');
                 thumbnail.className = 'thumbnail';
-                if (file) {
-                    thumbnail.innerHTML = `<img src="${file.data}" alt="${file.name}">`;
-                    thumbnail.addEventListener('click', () => showFullscreen(file.data, i));
-                } else {
-                    thumbnail.innerHTML = `<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">이미지 없음</div>`;
-                }
+                thumbnail.innerHTML = `<img src="${file.data}" alt="${file.name}">`;
+                thumbnail.addEventListener('click', () => showFullscreen(file.data, index));
+                thumbnailGrid.appendChild(thumbnail);
+            });
+
+            // 무작위 이미지로 나머지 슬롯 채우기
+            for (let i = 0; i < randomImageCount; i++) {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'thumbnail';
+                const randomImageUrl = `https://picsum.photos/300/300?random=${Math.floor(Math.random() * 1000)}`;
+                thumbnail.innerHTML = `<img src="${randomImageUrl}" alt="Placeholder">`;
+                thumbnail.addEventListener('click', () => showFullscreen(randomImageUrl, storedImages.length + i));
                 thumbnailGrid.appendChild(thumbnail);
             }
         }
