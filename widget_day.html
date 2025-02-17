@@ -102,33 +102,35 @@ body{
 
 </body>
 <script>
-    const year = new Date().getFullYear();
-const myDate = new Date('jan 18, 2025 00:00:00');
-console.log(myDate);
+    // Function to update the current date and time
+    function updateDateTime() {
+        const now = new Date();
 
-// countdown
-let timer = setInterval(function() {
+        // Get the current date and time components
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  // get today's date
-  const today = new Date().getTime();
+        // Calculate the day of the year
+        const start = new Date(now.getFullYear(), 0, 0);
+        const diff = now - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
 
-  // get the difference
-  const diff = myDate - today;
+        // Display the current date and time
+        document.getElementById("days").innerHTML = ` ${dayOfYear}`;
+        document.getElementById("hours").innerHTML = hours;
+        document.getElementById("minutes").innerHTML = minutes;
+        document.getElementById("seconds").innerHTML = seconds;
+    }
 
-  // math
-  let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    // Update the date and time every second
+    setInterval(updateDateTime, 1000);
 
-  // display
-  document.getElementById("days").innerHTML=days
-  document.getElementById("hours").innerHTML=hours
-  document.getElementById("minutes").innerHTML=minutes
-  document.getElementById("seconds").innerHTML=seconds
-
-
-
-}, 1);
+    // Initial call to display the date and time immediately
+    updateDateTime();
 </script>
 </html>
