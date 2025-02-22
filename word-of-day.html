@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        .calendar-header {
+            grid-column: span 7;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .weekday {
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+            background-color: #f0f0f0;
+        }
+        .date {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .date {
+            background-color: #e3f2fd;
+        }
+        .date:hover {
+            background-color: #bbdefb;
+        }
+        .word-display {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .example {
+            margin: 10px 0;
+            color: #666;
+            font-style: italic;
+            padding-left: 20px;
+        }
+        .empty-date {
+            background-color: #f9f9f9;
+        }
+        .selected {
+            background-color: #bbdefb !important;
+        }
+        .nav-btn {
+            padding: 5px 15px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .nav-btn:hover {
+            background-color: #45a049;
+        }
+        .month-select {
+            padding: 5px 10px;
+            font-size: 1em;
+            margin: 0 10px;
+        }
+        .year-select {
+            padding: 5px 10px;
+            font-size: 1em;
+            margin: 0 10px;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .loading-text {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .stats {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Word of the Day Calendar</h1>
+        <div class="file-input">
+            <input type="file" id="csvFile" accept=".csv" />
+            <button class="btn" onclick="loadWordsFromFile()">Load Words from CSV</button>
+        </div>
+        <div class="stats" id="stats"></div>
+        
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="prevMonth()">&lt; Prev</button>
+            <select id="monthSelect" class="month-select" onchange="updateCalendar()">
+                <option value="0">January</option>
+                <option value="1">February</option>
+                <option value="2">March</option>
+                <option value="3">April</option>
+                <option value="4">May</option>
+                <option value="5">June</option>
+                <option value="6">July</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">October</option>
+                <option value="10">November</option>
+                <option value="11">December</option>
+            </select>
+            <select id="yearSelect" class="year-select" onchange="updateCalendar()">
+            </select>
+            <button class="nav-btn" onclick="nextMonth()">Next &gt;</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="generateNewWords()">Generate New 5 Random Words</button>
+        </div>
+        
+        <div id="calendar" class="calendar">
+            <div class="calendar-header" id="month-header"></div>
+        </div>
+        
+        <div class="word-display" id="word-display">
+            <h2>Click a date to see the word of the day</h2>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        let wordDatabase = [];
+        let currentWords = {};
+        let currentDate = new Date();
+
+        // 연도 선택 옵션 초기화
+        function initializeYearSelect() {
+            const yearSelect = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function prevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateDateSelects();
+            updateCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateDateSelects();
+            updateCalendar();
+        }
+
+        function updateDateSelects() {
+            document.getElementById('monthSelect').value = currentDate.getMonth();
+            document.getElementById('yearSelect').value = currentDate.getFullYear();
+        }
+
+        function updateCalendar() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            currentDate = new Date(yearSelect.value, monthSelect.value, 1);
+            generateNewWords();
+        }
+
+        function showLoading(message) {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerHTML = `<div class="loading-text">${message}</div>`;
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.querySelector('.loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                <strong>Database Stats:</strong>
+                <br>Total words loaded: ${wordDatabase.length}
+            `;
+        }
+
+        async function loadWordsFromFile() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            showLoading('Loading CSV file... Please wait.');
+            wordDatabase = [];
+
+            try {
+                const fileContent = await file.text();
+                console.log('File content preview:', fileContent.substring(0, 200)); // 디버깅용
+
+                Papa.parse(fileContent, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        console.log('Parse results:', results); // 디버깅용
+                        
+                        if (results.data && Array.isArray(results.data)) {
+                            wordDatabase = results.data
+                                .filter(row => row.word && row.definition) // 유효한 데이터만 필터링
+                                .map(row => ({
+                                    word: row.word.trim(),
+                                    definition: row.definition.trim(),
+                                    examples: [
+                                        row.example1 ? row.example1.trim() : "No example available",
+                                        row.example2 ? row.example2.trim() : "No example available"
+                                    ]
+                                }));
+
+                            console.log('Processed database:', wordDatabase); // 디버깅용
+                            hideLoading();
+                            console.log(`Successfully loaded ${wordDatabase.length} words`);
+                            updateStats();
+                            generateNewWords();
+                        } else {
+                            throw new Error('Invalid CSV format');
+                        }
+                    },
+                    error: function(error) {
+                        throw error;
+                    }
+                });
+            } catch (error) {
+                hideLoading();
+                console.error('Error processing file:', error);
+                alert('Error processing CSV file: ' + error.message);
+            }
+        }
+
+        function getRandomWords(count) {
+            let sourceDatabase = wordDatabase.length > 0 ? wordDatabase : defaultWordDatabase;
+            console.log('Source database length:', sourceDatabase.length); // 디버깅용
+            
+            if (sourceDatabase.length === 0) {
+                console.error('No words available in database');
+                return Array(count).fill({
+                    word: 'No word available',
+                    definition: 'Please load a valid CSV file',
+                    examples: ['No examples available', 'No examples available']
+                });
+            }
+
+            let words = [];
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * sourceDatabase.length);
+                words.push(sourceDatabase[randomIndex]);
+            }
+            
+            console.log('Selected random words:', words); // 디버깅용
+            return words;
+        }
+
+        function generateNewWords() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            
+            // 해당 월의 모든 날짜에 대해 단어 할당
+            currentWords = {};
+            for (let i = 1; i <= lastDate; i++) {
+                const randomWord = getRandomWords(1)[0];
+                currentWords[i] = randomWord;
+            }
+
+            document.getElementById('calendar').innerHTML = '<div class="calendar-header" id="month-header"></div>';
+            createCalendar();
+        }
+
+        function createCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('month-header').textContent = `${monthNames[month]} ${year}`;
+            
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            weekdays.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'weekday';
+                dayElement.textContent = day;
+                document.getElementById('calendar').appendChild(dayElement);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'date empty-date';
+                document.getElementById('calendar').appendChild(emptyDay);
+            }
+
+            for (let i = 1; i <= lastDate; i++) {
+                const dateElement = document.createElement('div');
+                dateElement.className = currentWords[i] ? 'date has-word' : 'date';
+                dateElement.textContent = i;
+                
+                dateElement.addEventListener('click', () => {
+                    const prevSelected = document.querySelector('.selected');
+                    if (prevSelected) {
+                        prevSelected.classList.remove('selected');
+                    }
+                    dateElement.classList.add('selected');
+                    showWord(i);
+                });
+                
+                document.getElementById('calendar').appendChild(dateElement);
+            }
+        }
+
+        function showWord(day) {
+            const wordInfo = currentWords[day];
+            const display = document.getElementById('word-display');
+            
+            if (wordInfo) {
+                let wordsHtml = '';
+                for (let i = 0; i < 5; i++) {
+                    const randomWord = getRandomWords(1)[0];
+                    wordsHtml += `
+                        <div style="margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #eee;">
+                            <h3>${i + 1}. ${randomWord.word}</h3>
+                            <p><strong>Definition:</strong> ${randomWord.definition}</p>
+                            <p class="example">• ${randomWord.examples[0]}</p>
+                            <p class="example">• ${randomWord.examples[1]}</p>
+                        </div>
+                    `;
+                }
+                display.innerHTML = `
+                    <h2>Words for ${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h2>
+                    ${wordsHtml}
+                `;
+            } else {
+                display.innerHTML = '<h2>No word available for this date</h2>';
+            }
+        }
+
+        const defaultWordDatabase = [
+            {
+                word: 'Ephemeral',
+                definition: 'Lasting for a very short time',
+                examples: [
+                    'The ephemeral beauty of cherry blossoms makes them especially precious.',
+                    'Most social media trends are ephemeral, lasting only a few days.'
+                ]
+            }
+        ];
+
+        // 초기화
+        initializeYearSelect();
+        updateDateSelects();
+        generateNewWords();
+    </script>
+</body>
+</html>
